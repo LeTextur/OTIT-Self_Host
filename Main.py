@@ -10,6 +10,11 @@ import re
 from osu import Client
 from IRC import IRC_CHANNEL
 from threading import Thread
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 irc_bot = IrcBot()
@@ -55,14 +60,14 @@ TARGET_CHANNEL = "czarnatextura"
 
 # listeling to the chat messages
 async def on_massage(msg: ChatMessage):
-    print(f"{msg.user.display_name} - {msg.text}")
+    logger.info(f"{msg.user.display_name} - {msg.text}")
     
     # detecting osu beatmap link
     beatmap_link_pattern = re.compile(r'(https://)?osu.ppy.sh/(b/\d+|beatmapsets/\d+#osu/\d+)')
     match = beatmap_link_pattern.search(msg.text)
     
     if match:
-        print(f"Detected osu! beatmap link: {match[0]}")
+        logger.info(f"Detected osu! beatmap link: {match[0]}")
         # Preparing to send the beatmap_id to the OSUAPI
         beatmap_id = str(match.group(2)).split("/")[-1]
 
@@ -72,14 +77,18 @@ async def on_massage(msg: ChatMessage):
                 
         # Send the message to the IRC channel
         irc_bot.send_message(IRC_CHANNEL, osu_msg)
-        await msg.chat.send_message(TARGET_CHANNEL, f"{msg.user.name} wysłał requesta")
+        await msg.chat.send_message(TARGET_CHANNEL, f"[BOT] {msg.user.name} wysłał requesta")
         
 # /np command
 async def np_command(msg: ChatCommand):
-    id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_ID.txt", "r")
-    await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
-    id_map.close()
-    print("użyto komendy !np i wyświetlono link do aktualnie granej mapy")
+    try:
+        id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_ID.txt", "r")
+        await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
+        id_map.close()
+        logger.info("użyto komendy !np i wyświetlono link do aktualnie granej mapy")
+    except Exception as e:
+        logger.error(f"An error occurred while trying to get the currently played map: {e}")
+        await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
     
 
     
@@ -88,7 +97,7 @@ async def on_ready(ready_event: EventData):
     # Join the channel
     await ready_event.chat.join_room(TARGET_CHANNEL)
     # Print ready message
-    print(f"Joined Twitch channel: {TARGET_CHANNEL}")
+    logger.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
     
 # Bot setup function
 async def run_bot():
@@ -98,13 +107,15 @@ async def run_bot():
     auth = UserAuthenticator(bot, USER_SCOPE,) 
     token, refresh_token = await auth.authenticate()
     await bot.set_user_authentication(token, USER_SCOPE, refresh_token)
-    
+  
     # Initialize chat class
-    chat = await Chat(bot)
+    chat = await Chat(bot, no_message_reset_time = 2)
     
-    # Register events
+    # Listen to events
     chat.register_event(ChatEvent.READY, on_ready)
     chat.register_event(ChatEvent.MESSAGE, on_massage)
+    
+    # Register commands
     chat.register_command("np", np_command)
 
     # Start Twitch bot
@@ -118,7 +129,7 @@ async def run_bot():
     try:
         input("Press Enter to close the program\n")
     finally:
-        await chat.send_message(TARGET_CHANNEL, "Request bot został wyłączony")
+        await chat.send_message(TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
         chat.stop()
         await bot.close()
         
