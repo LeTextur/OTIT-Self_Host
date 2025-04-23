@@ -12,10 +12,6 @@ from IRC import IRC_CHANNEL
 from threading import Thread
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-
-
 load_dotenv()
 irc_bot = IrcBot()
 
@@ -56,18 +52,21 @@ def get_beatmap_properties(id):
 TWITCH_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT, AuthScope.CHANNEL_MANAGE_BROADCAST]
-TARGET_CHANNEL = "czarnatextura"
+TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+
+
+
 
 # listeling to the chat messages
 async def on_massage(msg: ChatMessage):
-    logger.info(f"{msg.user.display_name} - {msg.text}")
+    logging.info(f"{msg.user.display_name} - {msg.text}")
     
     # detecting osu beatmap link
     beatmap_link_pattern = re.compile(r'(https://)?osu.ppy.sh/(b/\d+|beatmapsets/\d+#osu/\d+)')
     match = beatmap_link_pattern.search(msg.text)
     
     if match:
-        logger.info(f"Detected osu! beatmap link: {match[0]}")
+        logging.info(f"Detected osu! beatmap link: {match[0]}")
         # Preparing to send the beatmap_id to the OSUAPI
         beatmap_id = str(match.group(2)).split("/")[-1]
 
@@ -79,16 +78,27 @@ async def on_massage(msg: ChatMessage):
         irc_bot.send_message(IRC_CHANNEL, osu_msg)
         await msg.chat.send_message(TARGET_CHANNEL, f"[BOT] {msg.user.name} wysłał requesta")
         
-# /np command
+# !np command
 async def np_command(msg: ChatCommand):
     try:
         id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_ID.txt", "r")
         await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
         id_map.close()
-        logger.info("użyto komendy !np i wyświetlono link do aktualnie granej mapy")
+        logging.info("the !np command was used and the currently played beatmap link was displayed")
     except Exception as e:
-        logger.error(f"An error occurred while trying to get the currently played map: {e}")
+        logging.error(f"An error occurred while trying to get the currently played map: {e}")
         await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
+        
+# !pp command
+async def pp_command(msg: ChatCommand):
+    try:
+        id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_PP.txt", "r")
+        await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
+        id_map.close()
+        logging.info("the !pp command was used and the amount of pp for each acc value was displayed")
+    except Exception as e:
+        logging.error(f"An error occurred while trying to get the currently pp for a map: {e}")
+        await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać PP za mapę")
     
 
     
@@ -97,14 +107,15 @@ async def on_ready(ready_event: EventData):
     # Join the channel
     await ready_event.chat.join_room(TARGET_CHANNEL)
     # Print ready message
-    logger.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
+    logging.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
+    #Main_GUI.start_button.configure(state="disabled", fg_color="darkgreen")
     
 # Bot setup function
 async def run_bot():
     
     # Authenticate the bot
     bot = await Twitch(TWITCH_ID, TWITCH_SECRET)
-    auth = UserAuthenticator(bot, USER_SCOPE,) 
+    auth = UserAuthenticator(bot, USER_SCOPE) 
     token, refresh_token = await auth.authenticate()
     await bot.set_user_authentication(token, USER_SCOPE, refresh_token)
   
@@ -117,6 +128,7 @@ async def run_bot():
     
     # Register commands
     chat.register_command("np", np_command)
+    chat.register_command("pp", pp_command)
 
     # Start Twitch bot
     chat.start()
@@ -125,14 +137,23 @@ async def run_bot():
     irc_bot_thread = Thread(target=irc_bot.start)
     irc_bot_thread.start()
     
-    # close the program
-    try:
-        input("Press Enter to close the program\n")
-    finally:
+        # close the program
+    async def close_program():
         await chat.send_message(TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
         chat.stop()
         await bot.close()
         
-# keep the bot running
-asyncio.run(run_bot())
+    return close_program
 
+def start_bot():
+    return asyncio.run(run_bot())
+
+
+# make config gui for the bot
+    # - Main menu with options and console
+    # - settings menu
+    
+    
+# make the bot work with multiple channels
+# bug fixing
+# add more commands
