@@ -5,14 +5,15 @@ from pathlib import Path
 import logging
 import os
 import webbrowser
-from osu import Client
-load_dotenv()
 
 class SetupGui(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         logging.info("Starting GUI")
         
+        env_path = Path(__file__).parent / ".env"
+        load_dotenv(dotenv_path=env_path, override=True)
+
         # Set the appearance mode and color theme
         customtkinter.set_appearance_mode("System") 
         customtkinter.set_default_color_theme("blue")  
@@ -22,6 +23,7 @@ class SetupGui(customtkinter.CTk):
         self.tutorial_window = None  # Reference to the Tutorial window
         
         if self.first_time == "false":
+            logging.info("Loading saved entries from .env file")
             self.saved_entries["TWITCH_ID"] = os.getenv("TWITCH_CLIENT_ID", "")
             self.saved_entries["TWITCH_SECRET"] = os.getenv("TWITCH_CLIENT_SECRET", "")
             self.saved_entries["TWITCH_CHANNEL"] = os.getenv("TWITCH_TARGET_CHANNEL", "")
@@ -31,7 +33,7 @@ class SetupGui(customtkinter.CTk):
             self.saved_entries["IRC_PASSWORD"] = os.getenv("IRC_PASSWORD", "")
         
         # window title and size
-        self.title("osu! - Twitch Integration bot")
+        self.title("osu! - Twitch Integration tool | API's config")
         self.geometry("400x300")
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -204,6 +206,12 @@ class SetupGui(customtkinter.CTk):
     def on_closing(self):
         self.save_entries()
         
+           # Close the tutorial window if it is open
+        if self.tutorial_window:
+            self.tutorial_window.destroy()
+            self.tutorial_window = None
+        
+        #checking if all fields are filled
         missing_keys = [key for key, value in self.saved_entries.items() if value == ""]
         
         if missing_keys:
@@ -211,7 +219,7 @@ class SetupGui(customtkinter.CTk):
                 messagebox.showerror("Nastąpił błąd", f"Proszę wypełnić wszystkie Pola.\nBrakujące pola: {', '.join(missing_keys)}")
                 return
             
-        
+        #saving to .env file
         env_path = Path(__file__).parent / ".env"
         
         set_key(dotenv_path=env_path, key_to_set="TWITCH_CLIENT_ID", value_to_set=self.saved_entries["TWITCH_ID"], quote_mode= "never")
@@ -225,6 +233,7 @@ class SetupGui(customtkinter.CTk):
         set_key(dotenv_path=env_path, key_to_set="IRC_PASSWORD", value_to_set=self.saved_entries["IRC_PASSWORD"], quote_mode= "never")
         set_key(dotenv_path=env_path, key_to_set="FIRST_TIME_RUN", value_to_set="false", quote_mode= "never")
 
+
         logging.info("Saved entries to .env file")
         self.after_cancel("all")
         self.destroy()
@@ -236,9 +245,8 @@ class SetupGui(customtkinter.CTk):
                 gui.mainloop()
         
         return
-
-
-
+            
+            
 class Tutorial(customtkinter.CTk):
     def __init__(self, parent, current_page):
         super().__init__()
@@ -271,7 +279,7 @@ class Tutorial(customtkinter.CTk):
             self.insert_hyperlink(
                 start_text,
                 "https://dev.twitch.tv/console/apps",
-                " i stwórz nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne."
+                " i zarejestruj nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne. Po rejestracji, kliknij zarządzaj obok twojej aplikacji. Na dole strony znajdziesz Identyfikator klienta (Twitch Client ID) oraz do stworzenia Hasło klienta (Twitch Client SECRET)."
                 
             )
             

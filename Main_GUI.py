@@ -1,13 +1,17 @@
 import customtkinter
 import tkinter
 import sys
+import os
 import threading
 import logging
 from Main import start_bot
 from Setup_GUI import SetupGui
 import asyncio
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
 
 class ConsoleOutput:
     def __init__(self, widget):
@@ -15,10 +19,11 @@ class ConsoleOutput:
 
     def write(self, message):
         if message.strip():
-            self.widget.configure(state="normal")
-            self.widget.insert(tkinter.END, message)
-            self.widget.see(tkinter.END)
-            self.widget.configure(state="disabled")
+            if self.widget:
+                self.widget.configure(state="normal")
+                self.widget.insert(tkinter.END, message)
+                self.widget.see(tkinter.END)
+                self.widget.configure(state="disabled")
 
     def flush(self):
         pass
@@ -28,7 +33,7 @@ class MainGui(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("osu! - Twitch Integration bot")
+        self.title("osu! - Twitch Integration tool")
         self.geometry("600x500")
         self.resizable(False, False)
         
@@ -41,6 +46,7 @@ class MainGui(customtkinter.CTk):
         # console_frame
         self.console_output = customtkinter.CTkTextbox(self.console_frame, width=360, height=450, wrap=tkinter.WORD, scrollbar_button_color="", scrollbar_button_hover_color="", state="disabled")
         self.console_output.grid(row=0, column=0, padx=20, pady=20)
+
         
         # redirecting stdout and stderr to the console_output
         sys.stdout = ConsoleOutput(self.console_output)
@@ -51,6 +57,7 @@ class MainGui(customtkinter.CTk):
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S")
         handler.setFormatter(formatter)
         logging.getLogger().addHandler(handler)
+        logging.getLogger().setLevel(logging.INFO)
             
         # settings buttons - (settings_frame)
         self.start_button = customtkinter.CTkButton(self.settings_frame, text="Start Bot", command=self.start, fg_color="green")
@@ -79,6 +86,8 @@ class MainGui(customtkinter.CTk):
     def api_setup(self):
         logging.info("API setup button clicked")
         try:
+            load_dotenv(env_path, override=True)
+            
             self.setup_window = SetupGui()
             self.setup_window.mainloop()
         except Exception as e:
