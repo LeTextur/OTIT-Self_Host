@@ -23,6 +23,7 @@ if  first_time == "true":
     logger.info("First time run, opening Setup GUI")
     fgui = SetupGui()
     fgui.mainloop()
+    load_dotenv(env_path, override=True)  # Reload the .env file after Setup_GUI
 else:
     logger.info("opening Main GUI")
     gui = MainGui()

@@ -2,21 +2,83 @@ from twitchAPI.chat import Chat, EventData, ChatMessage, ChatMessage, ChatSub, C
 from twitchAPI.oauth import UserAuthenticator
 from twitchAPI.twitch import Twitch
 from twitchAPI.type import AuthScope, ChatEvent
+import twitchAPI
 import os
 import asyncio
 from dotenv import load_dotenv
-from IRC import IrcBot, IRC_CHANNEL
+from IRC import IrcBot
 import re
 from osu import Client
 from threading import Thread
 import logging
 from pathlib import Path
-
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
-irc_bot = IrcBot()
+
+def initialize_irc_bot():
+    global env_path
+    global irc_bot
+    env_path = Path(__file__).parent / ".env"
+    load_dotenv(dotenv_path=env_path, override=True)
+    irc_bot = IrcBot()
+    logging.info("IRC bot initialized successfully.")
+
+#connecting function for osu!irc and twitch API
+async def run_bot():
+    
+    initialize_irc_bot()
+    
+    TWITCH_ID = os.getenv("TWITCH_CLIENT_ID")
+    USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT, AuthScope.CHANNEL_MANAGE_BROADCAST]
+    TWITCH_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
+    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+    
+    if [TWITCH_ID, TWITCH_SECRET, USER_SCOPE, TARGET_CHANNEL].count(None) > 0:
+        raise ValueError("Twitch API credentials are blank. check API's config.")
+    
+    # Authenticate the bot
+
+    bot = await Twitch(TWITCH_ID, TWITCH_SECRET)
+    auth = UserAuthenticator(bot, USER_SCOPE) 
+    token, refresh_token = await auth.authenticate()
+    await bot.set_user_authentication(token, USER_SCOPE, refresh_token)
+  
+    # Initialize chat class
+    chat = await Chat(bot, no_message_reset_time = 2)
+    
+    # Listen to events
+    chat.register_event(ChatEvent.READY, on_ready)
+    chat.register_event(ChatEvent.MESSAGE, on_massage)
+    
+    # Register commands
+    chat.register_command("np", np_command)
+    chat.register_command("pp", pp_command)
+
+    # Start Twitch bot
+    chat.start()
+    
+    # Start IRC bot
+    irc_bot_thread = Thread(target=irc_bot.start, name="IRC_BOT_THREAD")
+    irc_bot_thread.start()
+    
+    
+    # close the program
+    async def close_program():
+        await chat.send_message(TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
+        chat.stop()
+        await bot.close()
+
+    return close_program
 
 
+
+# Bot connected successfully    
+async def on_ready(ready_event: EventData):
+    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+    # Join the channel
+    await ready_event.chat.join_room(TARGET_CHANNEL)
+    # Print ready message
+    logging.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
 
 # Function to convert seconds to readable time
 def convert_seconds_to_readable(seconds: str) -> str:
@@ -51,13 +113,6 @@ def get_beatmap_properties(id):
 
 
 
-# Twitch API credentials
-TWITCH_ID = os.getenv("TWITCH_CLIENT_ID")
-TWITCH_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
-USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT, AuthScope.CHANNEL_MANAGE_BROADCAST]
-TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-
-
 # Global variable to track the worker task
 worker_task = None
 
@@ -86,8 +141,10 @@ async def request_worker():
             irc_bot.messages_queue.task_done()
 
 
+
 # Listening to the chat messages
 async def on_massage(msg: ChatMessage):
+    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
     global worker_task  # Use the global variable to track the worker task
 
     logging.info(f"{msg.user.display_name} - {msg.text}")
@@ -102,100 +159,57 @@ async def on_massage(msg: ChatMessage):
         beatmap_id = str(match.group(2)).split("/")[-1]
         
         # Add beatmap_id to the queue
-        irc_bot.messages_queue.put_nowait((IRC_CHANNEL, beatmap_id, msg.user.display_name))
+        irc_bot.messages_queue.put_nowait((os.getenv("IRC_NICK"), beatmap_id, msg.user.display_name))
         await msg.chat.send_message(TARGET_CHANNEL, f"[BOT] {msg.user.display_name} wysłał requesta")
+        logging.info(f"Queue size after adding: {irc_bot.messages_queue.qsize()}")
         
         # Start request_worker as a background task if not already running
         if not worker_task or worker_task.done():
             worker_task = asyncio.create_task(request_worker())
     
-    logging.info(f"Queue size after adding: {irc_bot.messages_queue.qsize()}")
 
 
 
 # !np command
 async def np_command(msg: ChatCommand):
-    try:
-        id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_ID.txt", "r")
-        await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
-        id_map.close()
-        logging.info("the !np command was used and the currently played beatmap link was displayed")
-    except Exception as e:
-        logging.error(f"An error occurred while trying to get the currently played map: {e}")
-        await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
+    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+    load_dotenv(dotenv_path=env_path, override=True)
+    if os.getenv("NP_ENABLED") == "true":
+        try:
+            id_map = open(os.getenv("NP_FILE_PATH"), "r")
+            
+            await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
+            id_map.close()
+            logging.info("the !np command was used and the currently played beatmap link was displayed")
+        except Exception as e:
+            logging.error(f"An error occurred while trying to get the currently played map: {e}")
+            await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
+    else: logging.warning("!np command is disabled. Check Settings")
         
 # !pp command
 async def pp_command(msg: ChatCommand):
-    try:
-        id_map = open("C://Program Files (x86)/StreamCompanion/Files/Map_PP.txt", "r")
-        await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
-        id_map.close()
-        logging.info("the !pp command was used and the amount of pp for each acc value was displayed")
-    except Exception as e:
-        logging.error(f"An error occurred while trying to get the currently pp for a map: {e}")
-        await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać PP za mapę")
-    
-
-    
-# Bot connected successfully    
-async def on_ready(ready_event: EventData):
-    # Join the channel
-    await ready_event.chat.join_room(TARGET_CHANNEL)
-    # Print ready message
-    logging.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
-    
-# Bot setup function
-async def run_bot():
-    
-    load_dotenv(env_path, override=True)
-    
-    if [TWITCH_ID, TWITCH_SECRET, USER_SCOPE, TARGET_CHANNEL].count(None) > 0:
-        raise ValueError("Twitch API credentials are blank. check API's config.")
-    
-    # Authenticate the bot
-    bot = await Twitch(TWITCH_ID, TWITCH_SECRET)
-    auth = UserAuthenticator(bot, USER_SCOPE) 
-    token, refresh_token = await auth.authenticate()
-    await bot.set_user_authentication(token, USER_SCOPE, refresh_token)
-  
-    # Initialize chat class
-    chat = await Chat(bot, no_message_reset_time = 2)
-    
-    # Listen to events
-    chat.register_event(ChatEvent.READY, on_ready)
-    chat.register_event(ChatEvent.MESSAGE, on_massage)
-    
-    # Register commands
-    chat.register_command("np", np_command)
-    chat.register_command("pp", pp_command)
-
-    # Start Twitch bot
-    chat.start()
-    
-    # Start IRC bot
-    irc_bot_thread = Thread(target=irc_bot.start, name="IRC_BOT_THREAD")
-    irc_bot_thread.start()
+    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+    load_dotenv(dotenv_path=env_path, override=True)
+    if os.getenv("PP_ENABLED") == "true":
+        try:
+            pp_status = open(os.getenv("PP_FILE_PATH"), "r")
+            await msg.chat.send_message(TARGET_CHANNEL, pp_status.read())
+            pp_status.close()
+            logging.info("the !pp command was used and the amount of pp for each acc value was displayed")
+        except Exception as e:
+            logging.error(f"An error occurred while trying to get the currently pp for a map: {e}")
+            await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać PP za mapę")
+    else: logging.warning("!pp command is disabled. Check Settings")
     
     
-        # close the program
-    async def close_program():
-        await chat.send_message(TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
-        chat.stop()
-        await bot.close()
-
-        
-        
-    return close_program
-
+#start bot function for button in Main_GUI
 def start_bot():
+    load_dotenv(env_path, override=True)
     return asyncio.run(run_bot())
 
 
-
-# make config gui for the bot
-    # - settings menu
     
+# bug fixing
     
 # make the bot work with multiple channels
-# bug fixing
 # add more commands
