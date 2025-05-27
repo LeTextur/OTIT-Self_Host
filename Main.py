@@ -1,8 +1,7 @@
-from twitchAPI.chat import Chat, EventData, ChatMessage, ChatMessage, ChatSub, ChatCommand
+from twitchAPI.chat import Chat, EventData, ChatMessage, ChatCommand
 from twitchAPI.oauth import UserAuthenticator
 from twitchAPI.twitch import Twitch
 from twitchAPI.type import AuthScope, ChatEvent
-import twitchAPI
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -12,204 +11,207 @@ from osu import Client
 from threading import Thread
 import logging
 from pathlib import Path
-env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path, override=True)
 
-def initialize_irc_bot():
-    global env_path
-    global irc_bot
-    env_path = Path(__file__).parent / ".env"
-    load_dotenv(dotenv_path=env_path, override=True)
-    irc_bot = IrcBot()
-    logging.info("IRC bot initialized successfully.")
 
-#connecting function for osu!irc and twitch API
-async def run_bot():
+class TwitchBot:
+    def __init__(self):
+        self.env_path = Path(__file__).parent / ".env"
+        load_dotenv(dotenv_path=self.env_path, override=True)
+        self.TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+
     
-    initialize_irc_bot()
-    
-    TWITCH_ID = os.getenv("TWITCH_CLIENT_ID")
-    USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT, AuthScope.CHANNEL_MANAGE_BROADCAST]
-    TWITCH_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
-    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-    
-    if [TWITCH_ID, TWITCH_SECRET, USER_SCOPE, TARGET_CHANNEL].count(None) > 0:
-        raise ValueError("Twitch API credentials are blank. check API's config.")
-    
-    # Authenticate the bot
+        self.osu_api = Client.from_credentials(
+            client_id=os.getenv("OSU_CLIENT_ID"),
+            client_secret=os.getenv("OSU_CLIENT_SECRET"),
+            redirect_url=os.getenv("REDIRECT_URL"),
+        )
+        self.worker_task = None
+        self.irc_bot_thread = None
+        self.chat_ready = asyncio.Event()
 
-    bot = await Twitch(TWITCH_ID, TWITCH_SECRET)
-    auth = UserAuthenticator(bot, USER_SCOPE) 
-    token, refresh_token = await auth.authenticate()
-    await bot.set_user_authentication(token, USER_SCOPE, refresh_token)
-  
-    # Initialize chat class
-    chat = await Chat(bot, no_message_reset_time = 2)
-    
-    # Listen to events
-    chat.register_event(ChatEvent.READY, on_ready)
-    chat.register_event(ChatEvent.MESSAGE, on_massage)
-    
-    # Register commands
-    chat.register_command("np", np_command)
-    chat.register_command("pp", pp_command)
-
-    # Start Twitch bot
-    chat.start()
-    
-    # Start IRC bot
-    irc_bot_thread = Thread(target=irc_bot.start, name="IRC_BOT_THREAD")
-    irc_bot_thread.start()
-    
-    
-    # close the program
-    async def close_program():
-        await chat.send_message(TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
-        chat.stop()
-        await bot.close()
-
-    return close_program
-
-
-
-# Bot connected successfully    
-async def on_ready(ready_event: EventData):
-    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-    # Join the channel
-    await ready_event.chat.join_room(TARGET_CHANNEL)
-    # Print ready message
-    logging.info(f"Joined Twitch channel: {TARGET_CHANNEL}")
-
-# Function to convert seconds to readable time
-def convert_seconds_to_readable(seconds: str) -> str:
-    seconds = int(seconds)
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    if hours == 0:
-        return f'{minutes:g}:{seconds:02g}'
-    else:
-        return f'{hours:g}:{minutes:02g}:{seconds:02g}'
-
-
-
-# Function to get beatmap properties
-def get_beatmap_properties(id):
-    
-    # OSU API credentials
-    client_id = os.getenv("OSU_CLIENT_ID")
-    client_secret = os.getenv("OSU_CLIENT_SECRET")
-    redirect_url = os.getenv("REDIRECT_URL")
-    client = Client.from_credentials(client_id, client_secret, redirect_url)
-    
-    # Getting beatmap properties
-    beatmap_SR =  round(client.get_beatmap_attributes(id).star_rating, 2)
-    beatmap_artist = client.get_beatmap(id).beatmapset.artist
-    beatmap_title = client.get_beatmap(id).beatmapset.title
-    beatmap_diff = client.get_beatmap(id).version
-    beatmap_bpm = client.get_beatmap(id).bpm
-    beatmap_length = convert_seconds_to_readable(client.get_beatmap(id).total_length)
-    beatmap_link = f"https://osu.ppy.sh/b/{id}"
-    return beatmap_artist, beatmap_title, beatmap_diff, beatmap_SR, beatmap_link, beatmap_bpm , beatmap_length
-
-
-
-# Global variable to track the worker task
-worker_task = None
-
-# Function to handle requests
-async def request_worker():
-    while True:
-        try:
-            # Wait for a message from the queue
-            target, beatmap_id, name = await irc_bot.messages_queue.get()
-            
-            # Process the beatmap
-            beatmap_properties_list = get_beatmap_properties(beatmap_id)
-            osu_msg = (
-                f"{name}  »  "
-                f"[{beatmap_properties_list[4]} {beatmap_properties_list[0]} - {beatmap_properties_list[1]} "
-                f"[{beatmap_properties_list[2]}]]   ({beatmap_properties_list[5]} BPM, {beatmap_properties_list[3]}★, "
-                f"{beatmap_properties_list[6]})"
-            )
-            
-            # Send the message
-            irc_bot.send_message(target, osu_msg)
-        except Exception as e:
-            logging.error(f"Error sending message: {e}")
-        finally:
-            # Mark the task as done in the queue
-            irc_bot.messages_queue.task_done()
-
-
-
-# Listening to the chat messages
-async def on_massage(msg: ChatMessage):
-    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-    global worker_task  # Use the global variable to track the worker task
-
-    logging.info(f"{msg.user.display_name} - {msg.text}")
-    
-    # Detecting osu beatmap link
-    beatmap_link_pattern = re.compile(r'(https://)?osu.ppy.sh/(b/\d+|beatmapsets/\d+#osu/\d+)')
-    match = beatmap_link_pattern.search(msg.text)
-    
-    if match:
-        logging.info(f"Detected osu! beatmap link: {match[0]}")
-        # Preparing to send the beatmap_id to the OSUAPI
-        beatmap_id = str(match.group(2)).split("/")[-1]
+                
+   # If bot connected successfully    
+    async def on_ready(self, ready_event: EventData):
+        # Join the channel
+        await ready_event.chat.join_room(self.TARGET_CHANNEL)
+        logging.info(f"Joined Twitch channel: {self.TARGET_CHANNEL}")
+        self.chat_ready.set()  # Mark chat as ready
         
-        # Add beatmap_id to the queue
-        irc_bot.messages_queue.put_nowait((os.getenv("IRC_NICK"), beatmap_id, msg.user.display_name))
-        await msg.chat.send_message(TARGET_CHANNEL, f"[BOT] {msg.user.display_name} wysłał requesta")
-        logging.info(f"Queue size after adding: {irc_bot.messages_queue.qsize()}")
         
-        # Start request_worker as a background task if not already running
-        if not worker_task or worker_task.done():
-            worker_task = asyncio.create_task(request_worker())
+    # Listening to the chat messages
+    async def on_massage(self, msg: ChatMessage):
+        logging.info(f"{msg.user.display_name} - {msg.text}")
     
-
-
-
-# !np command
-async def np_command(msg: ChatCommand):
-    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-    load_dotenv(dotenv_path=env_path, override=True)
-    if os.getenv("NP_ENABLED") == "true":
-        try:
-            id_map = open(os.getenv("NP_FILE_PATH"), "r")
+        # Detecting osu beatmap link
+        beatmap_link_pattern = re.compile(r'(https://)?osu.ppy.sh/(b/\d+|beatmapsets/\d+#osu/\d+)')
+        match = beatmap_link_pattern.search(msg.text)
+    
+        if match:
+            logging.info(f"Detected osu! beatmap link: {match[0]}")
+            # Preparing to send the beatmap_id to the OSUAPI
+            beatmap_id = str(match.group(2)).split("/")[-1]
+                
+            # Add beatmap_id to the queue
+            self.irc_bot.messages_queue.put((os.getenv("IRC_NICK"), beatmap_id, msg.user.display_name))
+            logging.info(f"Queue size after adding: {self.irc_bot.messages_queue.qsize()}")
             
-            await msg.chat.send_message(TARGET_CHANNEL, id_map.read())
-            id_map.close()
-            logging.info("the !np command was used and the currently played beatmap link was displayed")
-        except Exception as e:
-            logging.error(f"An error occurred while trying to get the currently played map: {e}")
-            await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
-    else: logging.warning("!np command is disabled. Check Settings")
+            # Start worker if not running
+            if not self.worker_task or self.worker_task.done():
+                self.worker_task = asyncio.create_task(self.request_worker())
+
+
+    async def start_TwitchBot(self):
+        auth_dict = {
+            "TWITCH_ID": os.getenv("TWITCH_CLIENT_ID"),
+            "TWITCH_SECRET": os.getenv("TWITCH_CLIENT_SECRET"),
+            "USER_SCOPE": [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT, AuthScope.CHANNEL_MANAGE_BROADCAST],
+        }
+
+        self.bot = await Twitch(auth_dict["TWITCH_ID"], auth_dict["TWITCH_SECRET"])
+        auth = UserAuthenticator(self.bot, auth_dict["USER_SCOPE"])
+        token, refresh_token = await auth.authenticate()
+        await self.bot.set_user_authentication(token, auth_dict["USER_SCOPE"], refresh_token)
+
+        # Initialize chat class
+        self.chat = await Chat(self.bot, no_message_reset_time=2)
+
+        # Listen to events
+        self.chat.register_event(ChatEvent.READY, self.on_ready)
+        self.chat.register_event(ChatEvent.MESSAGE, self.on_massage)
+
+        # Register commands
+        self.chat.register_command("np", self.np_command)
+        self.chat.register_command("pp", self.pp_command)
+
+        # Start Twitch bot
+        self.chat.start()
+        self.chat_state = True
         
-# !pp command
-async def pp_command(msg: ChatCommand):
-    TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
-    load_dotenv(dotenv_path=env_path, override=True)
-    if os.getenv("PP_ENABLED") == "true":
-        try:
-            pp_status = open(os.getenv("PP_FILE_PATH"), "r")
-            await msg.chat.send_message(TARGET_CHANNEL, pp_status.read())
-            pp_status.close()
-            logging.info("the !pp command was used and the amount of pp for each acc value was displayed")
-        except Exception as e:
-            logging.error(f"An error occurred while trying to get the currently pp for a map: {e}")
-            await msg.chat.send_message(TARGET_CHANNEL, "[BOT] Nie udało się pobrać PP za mapę")
-    else: logging.warning("!pp command is disabled. Check Settings")
-    
-    
-#start bot function for button in Main_GUI
-def start_bot():
-    load_dotenv(env_path, override=True)
-    return asyncio.run(run_bot())
+        
+        if self.irc_bot_thread is None:
+            self.irc_bot = IrcBot()
+            self.irc_bot_thread = Thread(target=self.irc_bot.start, name="IRC_BOT_THREAD", daemon=True)
+            self.irc_bot_thread.start()
+        
+        
+    async def stop_TwitchBot(self):
+        # Cancel the worker task if running
+        if self.worker_task and not self.worker_task.done():
+            loop = self.worker_task.get_loop()
+            # Cancel the task in its own loop
+            def cancel_task():
+                self.worker_task.cancel()
+            loop.call_soon_threadsafe(cancel_task)
+
+        self.chat_state = False
+        await self.chat.send_message(self.TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
+        self.chat.stop()
+        await self.bot.close()
+        
+        
 
 
+    # commands
     
-# bug fixing
+    # !np command
+    async def np_command(self, msg: ChatCommand):
+        load_dotenv(dotenv_path=self.env_path, override=True)
+        if os.getenv("NP_ENABLED") == "true":
+            try:
+                id_map = open(os.getenv("NP_FILE_PATH"), "r")
+                
+                await msg.chat.send_message(self.TARGET_CHANNEL, id_map.read())
+                id_map.close()
+                logging.info("the !np command was used and the currently played beatmap link was displayed")
+            except Exception as e:
+                logging.error(f"An error occurred while trying to get the currently played map: {e}")
+                await msg.chat.send_message(self.TARGET_CHANNEL, "[BOT] Nie udało się pobrać aktualnie granej mapy")
+        else: logging.warning("!np command is disabled. Check Settings")
+        
+        
+    # !pp command
+    async def pp_command(self , msg: ChatCommand):
+        load_dotenv(dotenv_path=self.env_path, override=True)
+        if os.getenv("PP_ENABLED") == "true":
+            try:
+                pp_status = open(os.getenv("PP_FILE_PATH"), "r")
+                await msg.chat.send_message(self.TARGET_CHANNEL, pp_status.read())
+                pp_status.close()
+                logging.info("the !pp command was used and the amount of pp for each acc value was displayed")
+            except Exception as e:
+                logging.error(f"An error occurred while trying to get the currently pp for a map: {e}")
+                await msg.chat.send_message(self.TARGET_CHANNEL, "[BOT] Nie udało się pobrać PP za mapę")
+        else: logging.warning("!pp command is disabled. Check Settings")
+        
+        
+    # Function to handle requests
+    async def request_worker(self):
+        loop = asyncio.get_running_loop()
+        while True:
+            try:
+                logging.info("Worker waiting for new request...")
+                target, beatmap_id, name = await loop.run_in_executor(None, self.irc_bot.messages_queue.get)
+                logging.info(f"starting processing request from {name}")
+
+                await self.chat_ready.wait()  # Wait until chat is ready
+
+                try:
+                    # Process the beatmap
+                    beatmap_properties_list = self.get_beatmap_properties(beatmap_id)
+                    osu_msg = (
+                        f"{name}  »  "
+                        f"[{beatmap_properties_list[4]} {beatmap_properties_list[0]} - {beatmap_properties_list[1]} "
+                        f"[{beatmap_properties_list[2]}]]   ({beatmap_properties_list[5]} BPM, {beatmap_properties_list[3]}★, "
+                        f"{beatmap_properties_list[6]})"
+                    )
+                    
+                    # Send the message
+                    self.irc_bot.send_message(target, osu_msg)
+                    if self.chat_state:
+                        await self.chat.send_message(self.TARGET_CHANNEL, f"[BOT] {name} wysłał requesta")
+                    else:
+                        logging.warning("Twitch message not send: Bot not connected to Twitch")
+                except Exception as e:
+                    logging.error(f"Error sending message: {e}")
+                finally:
+                    # Mark the task as done in the queue
+                    self.irc_bot.messages_queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logging.error(f"Worker crashed: {e}")
+
+            
+    # Function to get beatmap properties
+    def get_beatmap_properties(self, id):
+        
+        # OSU API credentials
+        osu_auth_dict = {
+            "client_id": os.getenv("OSU_CLIENT_ID"),
+            "client_secret": os.getenv("OSU_CLIENT_SECRET"),
+            "redirect_url": os.getenv("REDIRECT_URL")
+            }
+
+        client = Client.from_credentials(osu_auth_dict["client_id"], osu_auth_dict["client_secret"], osu_auth_dict["redirect_url"])
+        
+        # Getting beatmap properties
+        beatmap_SR = round(client.get_beatmap_attributes(id).star_rating, 2)
+        beatmap_artist = client.get_beatmap(id).beatmapset.artist
+        beatmap_title = client.get_beatmap(id).beatmapset.title
+        beatmap_diff = client.get_beatmap(id).version
+        beatmap_bpm = client.get_beatmap(id).bpm
+        beatmap_length = self.convert_seconds_to_readable(client.get_beatmap(id).total_length)
+        beatmap_link = f"https://osu.ppy.sh/b/{id}"
+        return beatmap_artist, beatmap_title, beatmap_diff, beatmap_SR, beatmap_link, beatmap_bpm , beatmap_length
     
-# make the bot work with multiple channels
-# add more commands
+
+    """ Made by aticie """
+    # Function to convert seconds to readable time
+    def convert_seconds_to_readable(self, seconds: str) -> str:
+        seconds = int(seconds)
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        if hours == 0:
+            return f'{minutes:g}:{seconds:02g}'
+        else:
+            return f'{hours:g}:{minutes:02g}:{seconds:02g}'

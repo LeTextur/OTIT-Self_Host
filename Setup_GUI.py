@@ -1,5 +1,5 @@
 import customtkinter
-from tkinter import messagebox, END, WORD, Text, INSERT
+from tkinter import messagebox, END, WORD, Text, INSERT, filedialog
 from dotenv import load_dotenv, set_key
 from pathlib import Path
 import logging
@@ -23,14 +23,7 @@ class SetupGui(customtkinter.CTk):
         self.tutorial_window = None  # Reference to the Tutorial window
         
         if self.first_time == "false":
-            logging.info("Loading saved entries from .env file")
-            self.saved_entries["TWITCH_ID"] = os.getenv("TWITCH_CLIENT_ID", "")
-            self.saved_entries["TWITCH_SECRET"] = os.getenv("TWITCH_CLIENT_SECRET", "")
-            self.saved_entries["TWITCH_CHANNEL"] = os.getenv("TWITCH_TARGET_CHANNEL", "")
-            self.saved_entries["OSU_ID"] = os.getenv("OSU_CLIENT_ID", "")
-            self.saved_entries["OSU_SECRET"] = os.getenv("OSU_CLIENT_SECRET", "")
-            self.saved_entries["IRC_NICK"] = os.getenv("IRC_NICK", "")
-            self.saved_entries["IRC_PASSWORD"] = os.getenv("IRC_PASSWORD", "")
+            self.load_local_env()
         
         # window title and size
         self.title("osu! - Twitch Integration tool | API's config")
@@ -53,9 +46,76 @@ class SetupGui(customtkinter.CTk):
         self.progressbar.grid(row=6, column=0, columnspan=2)
         
         self.tutorial_button = customtkinter.CTkButton(self, text="Tutorial", command= lambda:  self.opening_tutorial())
-        self.tutorial_button.grid(row=7, column=0, columnspan=2, padx=5, pady=(40,0), sticky="ew")
+        self.tutorial_button.grid(row=7, column=0, padx=5, pady=(40,0), sticky="ew")
+        
+        self.import_settings_button = customtkinter.CTkButton(self, text="Import settings", command=lambda: self.import_settings())
+        self.import_settings_button.grid(row=7, column=1, columnspan=2, padx=5, pady=(40, 0), sticky="ew")
         
         self.first_page()
+        
+    def load_local_env(self):
+        env_path = Path(__file__).parent / ".env"
+        load_dotenv(dotenv_path=env_path, override=True)
+        logging.info("Loading saved entries from .env file")
+        self.saved_entries["TWITCH_ID"] = os.getenv("TWITCH_CLIENT_ID", "")
+        self.saved_entries["TWITCH_SECRET"] = os.getenv("TWITCH_CLIENT_SECRET", "")
+        self.saved_entries["TWITCH_CHANNEL"] = os.getenv("TWITCH_TARGET_CHANNEL", "")
+        self.saved_entries["OSU_ID"] = os.getenv("OSU_CLIENT_ID", "")
+        self.saved_entries["OSU_SECRET"] = os.getenv("OSU_CLIENT_SECRET", "")
+        self.saved_entries["IRC_NICK"] = os.getenv("IRC_NICK", "")
+        self.saved_entries["IRC_PASSWORD"] = os.getenv("IRC_PASSWORD", "")
+        
+    def import_settings(self):
+        executable_path = filedialog.askopenfilename(title="Select the .exe file from previous version of OTIT", filetypes=(("Executable", "*.exe"), ("All files", "*.*")))
+
+        if executable_path:
+            # Replace the .exe file name with "_internal/.env"
+            base_dir = os.path.dirname(executable_path)
+            new_path = os.path.join(base_dir, "_internal/.env")
+            print(f"Loading .env file from: {new_path}")
+
+            # Path to the local .env file
+            local_env_path = Path(__file__).parent / ".env"
+
+            # Import all variables from new_path to the local .env file
+            with open(new_path, "r") as source_env:
+                for line in source_env:
+                    # Skip comments and empty lines
+                    if line.strip() and not line.startswith("#"):
+                        key, value = line.strip().split("=", 1)
+                        set_key(local_env_path, key, value, quote_mode="never")
+            
+            self.load_local_env()
+            
+            current_page = self.title_page.cget("text")
+            if current_page == "Config Twitch API":
+                
+                if "TWITCH_CHANNEL" in self.saved_entries and self.saved_entries["TWITCH_CHANNEL"] != "": 
+                    self.TWITCH_CHANNEL.insert(0, self.saved_entries.get("TWITCH_CHANNEL"))
+                    
+                if "TWITCH_ID" in self.saved_entries and self.saved_entries["TWITCH_ID"] != "": 
+                    self.TWITCH_ID.insert(0, self.saved_entries.get("TWITCH_ID"))
+                    
+                if "TWITCH_SECRET" in self.saved_entries and self.saved_entries["TWITCH_SECRET"] != "": 
+                    self.TWITCH_SECRET.insert(0, self.saved_entries.get("TWITCH_SECRET"))
+                
+            elif current_page == "Config osu! API":
+                        
+                if "OSU_ID" in self.saved_entries and self.saved_entries["OSU_ID"] != "": 
+                    self.OSU_ID.insert(0, self.saved_entries.get("OSU_ID")) 
+                    
+                if "OSU_SECRET" in self.saved_entries and self.saved_entries["OSU_SECRET"] != "": 
+                    self.OSU_SECRET.insert(0, self.saved_entries.get("OSU_SECRET"))
+                
+            elif current_page == "Config IRC connection":
+                        
+                if "IRC_NICK" in self.saved_entries and self.saved_entries["IRC_NICK"] != "": 
+                    self.IRC_NICK.insert(0, self.saved_entries.get("IRC_NICK"))
+            
+                if "IRC_PASSWORD" in self.saved_entries and self.saved_entries["IRC_PASSWORD"] != "": 
+                    self.IRC_PASSWORD.insert(0, self.saved_entries.get("IRC_PASSWORD"))
+            
+                
         
     def opening_tutorial(self):
         self.tutorial_button.configure(state="disabled")
@@ -324,5 +384,3 @@ class Tutorial(customtkinter.CTk):
         
     def open_url(self, url):
         webbrowser.open_new(url)
-
-

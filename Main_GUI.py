@@ -6,7 +6,7 @@ import sys
 import os
 import threading
 import logging
-from Main import start_bot
+from Main import TwitchBot
 from Setup_GUI import SetupGui
 import asyncio
 from dotenv import load_dotenv, set_key
@@ -80,6 +80,15 @@ class MainGui(customtkinter.CTk):
         self.close_program = None
         self.started = False
         
+        self.twitch_bot = None  # Store the instance here
+
+        self.loop = asyncio.new_event_loop()
+        self.loop_thread = threading.Thread(target=self.loop.run_forever, daemon=True)
+        self.loop_thread.start()
+
+        
+
+        
     def opening_settings(self):
         logging.info("Settings button clicked")
         try:
@@ -114,39 +123,35 @@ class MainGui(customtkinter.CTk):
             logging.error(f"Error starting API setup: {e}")
         
     def start(self):
+        if self.twitch_bot is None:
+            self.twitch_bot = TwitchBot()
         
         logging.info("Starting the bot...")
-        
         self.start_button.configure(state="disabled", fg_color="darkorange")
         self.setup_button.configure(state="disabled")
-        threading.Thread(target=self.running_background_bot, daemon=True).start()
         self.stop_button.configure(state="normal")
+        threading.Thread(target=self._start_async, daemon=True).start()
+        
         self.started = True
         
-    def running_background_bot(self):
-        try:
-            self.close_program = start_bot()
-        except Exception as e:
-            logging.error(f"Error starting bot: {e}")
-                
+        
+    def _start_async(self):
+        asyncio.run_coroutine_threadsafe(self.twitch_bot.start_TwitchBot(), self.loop)
     
     def stop(self):
-        if self.close_program:
-            logging.info("Stopping the bot...")
-            
-            asyncio.run(self.close_program())
-            
-            self.start_button.configure(state="normal", fg_color="green")
-            self.setup_button.configure(state="normal")
-            self.stop_button.configure(state="disabled")
-            
-            self.started = False
-            
-            logging.info("The bot stopped.")
+        if self.twitch_bot is not None:
+            asyncio.run_coroutine_threadsafe(self.twitch_bot.stop_TwitchBot(), self.loop)
+        self.started = False
+        logging.info("The bot stopped.")
+        self.start_button.configure(state="normal", fg_color="green")
+        self.setup_button.configure(state="normal")
+        self.stop_button.configure(state="disabled")
+
         
     def quit(self):
         if self.started: 
             self.stop()
+            self.started = False
             
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -319,5 +324,4 @@ class Settings(customtkinter.CTk):
             
         self.destroy()
         logging.info("Settings saved")
-        
-        
+
