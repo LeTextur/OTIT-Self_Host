@@ -156,6 +156,13 @@ class MainGui(customtkinter.CTk):
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         
+            # Properly stop and close the event loop
+        if hasattr(self, "loop"):
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            if hasattr(self, "loop_thread"):
+                self.loop_thread.join()
+            self.loop.close()
+        
         self.after_cancel("all")
         self.destroy()
         
