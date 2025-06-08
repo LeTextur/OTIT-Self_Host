@@ -6,7 +6,7 @@ This project was inspired by [Ronnia Bot](https://github.com/aticie/ronnia-selfh
 
 ## Installation
 
-Simply go to [Release page](https://github.com/Piotrekol/OTIT-Self_Host/releases/latest) and download a .zip file with name *OTIT v0.x.x*.
+Simply go to [Release page](https://github.com/LeTextur/OTIT-Self_Host/releases/latest) and download a .zip file with name *OTIT v0.x.x*.
 Then extract an .exe file and *_internal* folder to the same directory and open the exe file.
 
 ## Is this a virus?
