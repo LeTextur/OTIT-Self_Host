@@ -1,0 +1,91 @@
+{
+    "api-conf-title-p1": "Config Twitch API",
+    "api-conf-title-p2": "Config osu! API",
+    "api-conf-title-p3": "Config IRC connection",
+    "prev-btn": "Previous",
+    "next-btn": "Next",
+    "finish-btn": "Finish",
+    "import-settings-btn": "Import settings",
+
+    "api-conf-messagebox-error-type":"Error",
+    "api-conf-messagebox-error":"Please fill in all fields.\nMissing fields: {fields}",
+    "api-conf-info":"Saved entries to .env file",
+
+    "api-conf-tutorial-btn": "Tutorial",
+    "api-conf-tutorial-desc1": "Go to:",
+    "api-conf-tutorial-desc2": "and register a new app. In the first field, enter a name of App. In the second field, enter the redirect URL: http://localhost:17563 . Select 'Game Integration' as a application category and for the client type, select 'Confidential'. Click 'Manage' next to your aplication after registration. At the bottom of the page, you will find Client ID (Twitch Client ID) and the Client Password (Twitch Client SECRET) to create.",
+    "api-conf-tutorial-desc3": "and scroll down to the bottom of the page and click on 'New OAuth Application' button. In the first field, enter the name of the application, and in the second field, enter the redirct URL: http://localhost:17563 . After creating the application, click on edit to view the Client ID and Client Secret (client key).",
+    "api-conf-tutorial-desc4": "At the bottom of the page, you'll find the IRC section. After clicking 'the New Password button for the older IRC' the password and nickname will appear",
+
+    "main-gui-start-btn": "Start Bot",
+    "main-gui-api-conf-btn": "API's Config",
+    "main-gui-settings-btn": "Settings",
+    "main-gui-stop-btn": "Stop Bot",
+    "main-gui-quit-btn": "Quit",
+
+    "main-gui-console-info1": "Starting the bot...",
+    "main-gui-console-info2": "The bot stopped",
+    "main-gui-console-info3": "Settings saved",
+
+    "main-gui-console-error1": "Error during finalize quit: ",
+
+    "settings-gui-error1": "!np command directory is blank",
+    "settings-gui-messagebox-error": "Error occurred. Chceck the .txt directory path",
+    "settings-gui-error2": "!pp command directory is blank",
+    
+    "settings-gui-label1": "Commands config",
+    "settings-gui-label2": "Enter a .txt directory where you can find information about PP",
+    "settings-gui-label3": "Enter a .txt directory where you can find information about the current map.",
+    "settings-gui-text": "For the commands to work properly, you need StreamCompanion or another program that can export data from osu to a .txt file.",
+    "settings-gui-switch1": "Turn on !pp command",
+    "settings-gui-switch2": "Turn on !np command",
+
+    "settings-gui-directory-browse-btn": "Browse",
+    "settings-gui-tutorial-btn": "Tutorial (coming soon)",
+    "settings-gui-save-btn": "Save",
+
+    "main-gui-irc-console-info1": "Initializing IrcBot with nickname: {os.getenv('IRC_NICK')}, server: {server}, port: {port}",
+    "main-gui-irc-console-info2": "Connected to osu!IRC server as {self._nickname}",
+    "main-gui-irc-console-info3": "In-Game-message was successfully sent to {target}",
+    "main-gui-irc-console-info4": "Reconnect successfull",
+
+    "main-gui-irc-console-error1": "Cannot send message: Not connected to IRC server!",
+    "main-gui-irc-console-error2": "Recconection failed: {e}",
+    "main-gui-irc-console-error3": "Error sending message to {target}: {e}",
+
+    "main-gui-twitch-console-info1": "Joined Twitch channel: {self.TARGET_CHANNEL}",
+    "main-gui-twitch-console-info2": "Detected osu! beatmap link: {match[0]}",
+    "main-gui-twitch-console-info3": "Queue size after adding: {self.queue.qsize()}",
+    "main-gui-twitch-console-info4": "Cancelling worker task...",
+    "main-gui-twitch-console-info5": "Sending shutdown message to chat...",
+    "main-gui-twitch-console-info6": "Stopping chat...",
+    "main-gui-twitch-console-info7": "Closing bot...",
+    "main-gui-twitch-console-info8": "the !np command was used and the currently played beatmap link was displayed",
+    "main-gui-twitch-console-info9": "the !pp command was used and the amount of pp for each acc value was displayed",
+    "main-gui-twitch-console-info10": "Request worker started",
+    "main-gui-twitch-console-info11": "starting processing request from {name}",
+    "main-gui-twitch-console-info12": "Request worker cancelled. Extiting worker",
+
+    "main-gui-twitch-console-warn1": "!np command is disabled. Check Settings",
+    "main-gui-twitch-console-warn2": "!pp command is disabled. Check Settings",
+
+    "main-gui-twitch-console-error1": "!pp command is disabled. Check Settings",
+    "main-gui-twitch-console-error2": "Error stopping chat: {e}",
+    "main-gui-twitch-console-error3": "Error closing bot: {e}",
+    "main-gui-twitch-console-error4": "An error occurred while trying to get the currently played map: {e}",
+    "main-gui-twitch-console-error5": "An error occurred while trying to get the currently pp for a map: {e}",
+    "main-gui-twitch-console-error6": "Error sending message: {e}",
+    
+    "main-gui-osuapi-console-info1": "Processing beatmap id: {id} properties",
+    "main-gui-osuapi-console-info2": "Done processing properties from map id: {id}",
+
+    "twitch-send-message1": "[BOT] Request bot has been turned off",
+    "twitch-send-message2": "[BOT] Unable to get currently played map",
+    "twitch-send-message3": "[BOT] Unable to get PP value for a map",
+    "twitch-send-message4": "[BOT] {name} sent a request"
+
+
+
+    
+
+}

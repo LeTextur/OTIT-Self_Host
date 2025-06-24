@@ -4,12 +4,15 @@ from irc.bot import SingleServerIRCBot, ExponentialBackoff
 from irc.client import ServerConnection, Event
 import logging
 from pathlib import Path
-import queue
+from lang_utils import Translator
 
 class IrcBot(SingleServerIRCBot):
     def __init__(self, server="irc.ppy.sh", port=6667):
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
+        
         #Flags
         self.running = True
+        
         
         # loading .env
         env_path = Path(__file__).parent / ".env"
@@ -20,7 +23,7 @@ class IrcBot(SingleServerIRCBot):
         recon = ExponentialBackoff(min_interval=5, max_interval=30)
         SingleServerIRCBot.__init__(self, [(server, port, os.getenv("IRC_PASSWORD"))], os.getenv("IRC_NICK"), os.getenv("IRC_NICK"), recon=recon)
         self.connection.set_rate_limit(1)
-        self.messages_queue = queue.Queue()
+
        
 
     def on_welcome(self, c: ServerConnection, e: Event):

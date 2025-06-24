@@ -5,10 +5,14 @@ from pathlib import Path
 import logging
 import os
 import webbrowser
+from lang_utils import Translator
 
 class SetupGui(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
+        
         logging.info("Starting GUI")
         
         env_path = Path(__file__).parent / ".env"
@@ -33,22 +37,22 @@ class SetupGui(customtkinter.CTk):
         self.resizable(False, False)
         
         # Create the main frame
-        self.title_page = customtkinter.CTkLabel(self, text="Config Twitch API", font=("Nunito", 20))
+        self.title_page = customtkinter.CTkLabel(self, text=self.translator.t("api-conf-title-p1"), font=("Nunito", 20))
         self.title_page.grid(row=0, column=0, padx=20, pady=20, columnspan=2)
         
-        self.buttonN = customtkinter.CTkButton(self, text="Next")
+        self.buttonN = customtkinter.CTkButton(self, text=self.translator.t("next-btn"))
         self.buttonN.grid(row=5, column=1, sticky="ew", padx=(5, 20), pady=20)
         
-        self.buttonP = customtkinter.CTkButton(self, text="Previous")
+        self.buttonP = customtkinter.CTkButton(self, text=self.translator.t("prev-btn"))
         self.buttonP.grid(row=5, column=0, sticky="ew", padx=(20, 5), pady=20)
         
         self.progressbar = customtkinter.CTkProgressBar(self, width=250)
         self.progressbar.grid(row=6, column=0, columnspan=2)
         
-        self.tutorial_button = customtkinter.CTkButton(self, text="Tutorial", command= lambda:  self.opening_tutorial())
+        self.tutorial_button = customtkinter.CTkButton(self, text=self.translator.t("api-conf-tutorial-btn"), command= lambda:  self.opening_tutorial())
         self.tutorial_button.grid(row=7, column=0, padx=5, pady=(40,0), sticky="ew")
         
-        self.import_settings_button = customtkinter.CTkButton(self, text="Import settings", command=lambda: self.import_settings())
+        self.import_settings_button = customtkinter.CTkButton(self, text=self.translator.t("import-settings-btn"), command=lambda: self.import_settings())
         self.import_settings_button.grid(row=7, column=1, columnspan=2, padx=5, pady=(40, 0), sticky="ew")
         
         self.first_page()
@@ -88,7 +92,7 @@ class SetupGui(customtkinter.CTk):
             self.load_local_env()
             
             current_page = self.title_page.cget("text")
-            if current_page == "Config Twitch API":
+            if current_page == self.translator.t("api-conf-title-p1"):
                 
                 if "TWITCH_CHANNEL" in self.saved_entries and self.saved_entries["TWITCH_CHANNEL"] != "": 
                     self.TWITCH_CHANNEL.insert(0, self.saved_entries.get("TWITCH_CHANNEL"))
@@ -99,7 +103,7 @@ class SetupGui(customtkinter.CTk):
                 if "TWITCH_SECRET" in self.saved_entries and self.saved_entries["TWITCH_SECRET"] != "": 
                     self.TWITCH_SECRET.insert(0, self.saved_entries.get("TWITCH_SECRET"))
                 
-            elif current_page == "Config osu! API":
+            elif current_page == self.translator.t("api-conf-title-p2"):
                         
                 if "OSU_ID" in self.saved_entries and self.saved_entries["OSU_ID"] != "": 
                     self.OSU_ID.insert(0, self.saved_entries.get("OSU_ID")) 
@@ -107,7 +111,7 @@ class SetupGui(customtkinter.CTk):
                 if "OSU_SECRET" in self.saved_entries and self.saved_entries["OSU_SECRET"] != "": 
                     self.OSU_SECRET.insert(0, self.saved_entries.get("OSU_SECRET"))
                 
-            elif current_page == "Config IRC connection":
+            elif current_page == self.translator.t("api-conf-title-p3"):
                         
                 if "IRC_NICK" in self.saved_entries and self.saved_entries["IRC_NICK"] != "": 
                     self.IRC_NICK.insert(0, self.saved_entries.get("IRC_NICK"))
@@ -135,18 +139,18 @@ class SetupGui(customtkinter.CTk):
         # Save the entries to the dictionary
         current_page = self.title_page.cget("text")
         
-        if current_page == "Config Twitch API":
+        if current_page == self.translator.t("api-conf-title-p1"):
             if hasattr(self, "TWITCH_ID") and hasattr(self, "TWITCH_SECRET") and hasattr(self, "TWITCH_CHANNEL"):
                 self.saved_entries["TWITCH_ID"] = self.TWITCH_ID.get()  
                 self.saved_entries["TWITCH_SECRET"] = self.TWITCH_SECRET.get()
                 self.saved_entries["TWITCH_CHANNEL"] = self.TWITCH_CHANNEL.get()
         
-        elif self.title_page.cget("text") == "Config osu! API":
+        elif self.title_page.cget("text") == self.translator.t("api-conf-title-p2"):
             if hasattr(self, "OSU_ID") and hasattr(self, "OSU_SECRET"):
                 self.saved_entries["OSU_ID"] = self.OSU_ID.get()
                 self.saved_entries["OSU_SECRET"] = self.OSU_SECRET.get()
        
-        elif self.title_page.cget("text") == "Config IRC connection":
+        elif self.title_page.cget("text") == self.translator.t("api-conf-title-p3"):
             if hasattr(self, "IRC_NICK") and hasattr(self, "IRC_PASSWORD"):
                 self.saved_entries["IRC_NICK"] = self.IRC_NICK.get()
                 self.saved_entries["IRC_PASSWORD"] = self.IRC_PASSWORD.get()
@@ -161,10 +165,8 @@ class SetupGui(customtkinter.CTk):
             self.OSU_SECRET.grid_forget()
         
         if self.first_time == "false": self.save_entries()
-
-        logging.info("changed to first page gui")
         
-        self.title_page.configure(text="Config Twitch API")
+        self.title_page.configure(text=self.translator.t("api-conf-title-p1"))
         
         self.TWITCH_CHANNEL = customtkinter.CTkEntry(self, placeholder_text="Twitch Channel", width=250)
         self.TWITCH_CHANNEL.grid(row=2, column=0, pady=(0,10), padx=(20, 5), sticky="ew")
@@ -182,7 +184,7 @@ class SetupGui(customtkinter.CTk):
         if "TWITCH_SECRET" in self.saved_entries and self.saved_entries["TWITCH_SECRET"] != "": self.TWITCH_SECRET.insert(0, self.saved_entries.get("TWITCH_SECRET"))
         
         self.buttonP.configure(state="disabled")
-        self.buttonN.configure(command=lambda: self.second_page() , text="Next")
+        self.buttonN.configure(command=lambda: self.second_page() , text=self.translator.t("next-btn"))
         
         self.progressbar.set(0.1)
         
@@ -192,7 +194,6 @@ class SetupGui(customtkinter.CTk):
         
     #Config osu! API page
     def second_page(self):
-        logging.info("changed to second page gui")
           
         if hasattr(self, "TWITCH_CHANNEL"):
             self.TWITCH_CHANNEL.grid_forget()
@@ -207,7 +208,7 @@ class SetupGui(customtkinter.CTk):
         
         self.save_entries()
         
-        self.title_page.configure(text="Config osu! API")
+        self.title_page.configure(text=self.translator.t("api-conf-title-p2"))
 
         self.OSU_ID = customtkinter.CTkEntry(self, placeholder_text="osu! API ID", width=300)
         self.OSU_ID.grid(row=2, column=0, padx=20, pady=(0,10), columnspan=2)
@@ -221,7 +222,7 @@ class SetupGui(customtkinter.CTk):
         
         
         self.buttonP.configure(command=lambda: self.first_page(), state="normal")
-        self.buttonN.configure(command=lambda: self.third_page(), text="Next")
+        self.buttonN.configure(command=lambda: self.third_page(), text=self.translator.t("next-btn"))
         
         self.progressbar.set(0.5)
         
@@ -230,7 +231,6 @@ class SetupGui(customtkinter.CTk):
     
     #Config IRC page
     def third_page(self):
-        logging.info("changed to third page gui")
         
         if hasattr(self, "OSU_ID"):
             self.OSU_ID.grid_forget()
@@ -240,7 +240,7 @@ class SetupGui(customtkinter.CTk):
         
         self.save_entries()
         
-        self.title_page.configure(text="Config IRC connection")
+        self.title_page.configure(text=self.translator.t("api-conf-title-p3"))
         
         self.IRC_NICK = customtkinter.CTkEntry(self, placeholder_text="IRC nick", width=300,)
         self.IRC_NICK.grid(row=2, column=0, padx=20, pady=(0,10), columnspan=2)
@@ -255,7 +255,7 @@ class SetupGui(customtkinter.CTk):
             self.IRC_PASSWORD.insert(0, self.saved_entries.get("IRC_PASSWORD"))
         
         self.buttonP.configure(command=lambda: self.second_page(), state="normal")
-        self.buttonN.configure(text="Finish", command=lambda: self.on_closing())
+        self.buttonN.configure(text=self.translator.t("finish-btn"), command=lambda: self.on_closing())
         
         self.progressbar.set(0.9)
         
@@ -275,8 +275,7 @@ class SetupGui(customtkinter.CTk):
         missing_keys = [key for key, value in self.saved_entries.items() if value == ""]
         
         if missing_keys:
-                logging.error(f"Missing value for {', '.join(missing_keys)}")
-                messagebox.showerror("Nastąpił błąd", f"Proszę wypełnić wszystkie Pola.\nBrakujące pola: {', '.join(missing_keys)}")
+                messagebox.showerror(self.translator.t("api-conf-messagebox-error-type"), self.translator.t("api-conf-messagebox-error") ,fields=', '.join(missing_keys))
                 return
             
         #saving to .env file
@@ -294,13 +293,12 @@ class SetupGui(customtkinter.CTk):
         set_key(dotenv_path=env_path, key_to_set="FIRST_TIME_RUN", value_to_set="false", quote_mode= "never")
 
 
-        logging.info("Saved entries to .env file")
+        logging.info(self.translator.t("api-conf-info"))
         self.after_cancel("all")
         self.destroy()
         
         if self.first_time == "true":
                 from Main_GUI import MainGui
-                logging.info("opening Main GUI")
                 gui = MainGui()
                 gui.mainloop()
         
@@ -311,7 +309,7 @@ class Tutorial(customtkinter.CTk):
     def __init__(self, parent, current_page):
         super().__init__()
         self.parent = parent
-        logging.info("Starting tutorial")
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
         
         # Set the appearance mode and color theme
         customtkinter.set_appearance_mode("System") 
@@ -333,29 +331,27 @@ class Tutorial(customtkinter.CTk):
         self.guide_text.configure(state="normal")
         self.guide_text.delete("1.0", END)
         
-        start_text = "Wejdź na stronę: \n"
+        start_text = self.translator.t("api-conf-tutorial-desc1")
         
-        if current_page == "Config Twitch API":
+        if current_page == self.translator.t("api-conf-title-p1"):
             self.insert_hyperlink(
                 start_text,
                 "https://dev.twitch.tv/console/apps",
-                " i zarejestruj nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne. Po rejestracji, kliknij zarządzaj obok twojej aplikacji. Na dole strony znajdziesz Identyfikator klienta (Twitch Client ID) oraz do stworzenia Hasło klienta (Twitch Client SECRET)."
-                
+                self.translator.t("api-conf-tutorial-desc2")
             )
             
-        elif current_page == "Config osu! API":
+        elif current_page == self.translator.t("api-conf-title-p2"):
             self.insert_hyperlink(
                 start_text,
                 "https://osu.ppy.sh/home/account/edit",
-                ". Zjedź na dół strony i kliknij w przycisk Nowa aplikacja OAuth. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Po stworzeniu aplikacji, klikając na edit możesz zobaczyć Client ID i Client Secret (client key)."
-                
+                self.translator.t("api-conf-tutorial-desc3")
             )
             
-        elif current_page == "Config IRC connection":
+        elif current_page == self.translator.t("api-conf-title-p3"):
             self.insert_hyperlink(
                 start_text,
                 "https://osu.ppy.sh/home/account/edit",
-                ". Na samym dole strony znajdziesz sekcję IRC. Po kliknięciu w przycisk Nowe Hasło starszego IRC pojawi się hasło oraz nick."
+                self.translator.t("api-conf-tutorial-desc4")
             )
             
             

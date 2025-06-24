@@ -11,6 +11,7 @@ from Setup_GUI import SetupGui
 import asyncio
 from dotenv import load_dotenv, set_key
 from pathlib import Path
+from lang_utils import Translator
 
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
@@ -34,6 +35,8 @@ class ConsoleOutput:
 class MainGui(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.protocol("WM_DELETE_WINDOW", self.quit)
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
         
         self.title("OTIT | Main GUI")
         self.geometry("600x500")
@@ -85,22 +88,17 @@ class MainGui(customtkinter.CTk):
         self.loop = asyncio.new_event_loop()
         self.loop_thread = threading.Thread(target=self.loop.run_forever, daemon=True)
         self.loop_thread.start()
+        
 
         
 
         
     def opening_settings(self):
-        logging.info("Settings button clicked")
-        try:
             load_dotenv(env_path, override=True)
             self.settings_button.configure(state="disabled")
             self.settings_window = Settings(on_save_callback=self.enable_settings_button)
             self.settings_window.protocol("WM_DELETE_WINDOW", lambda: self.closing_settings())
             self.settings_window.mainloop()
-
-        except Exception as e:
-            logging.error(f"Error starting settings window: {e}")
-
 
         # Re-enable the Settings button
     def enable_settings_button(self):
@@ -113,18 +111,14 @@ class MainGui(customtkinter.CTk):
             self.settings_button.configure(state="normal")
         
     def api_setup(self):
-        logging.info("API setup button clicked")
-        try:
             load_dotenv(env_path, override=True)
             
             self.setup_window = SetupGui()
             self.setup_window.mainloop()
-        except Exception as e:
-            logging.error(f"Error starting API setup: {e}")
         
     def start(self):
         if self.twitch_bot is None:
-            self.twitch_bot = TwitchBot()
+            self.twitch_bot = TwitchBot(loop=self.loop)
         
         logging.info("Starting the bot...")
         self.start_button.configure(state="disabled", fg_color="darkorange")
@@ -149,22 +143,35 @@ class MainGui(customtkinter.CTk):
 
         
     def quit(self):
-        if self.started: 
-            self.stop()
-            self.started = False
-            
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        
-            # Properly stop and close the event loop
-        if hasattr(self, "loop"):
-            self.loop.call_soon_threadsafe(self.loop.stop)
+            # Stop the bot if running
+            if self.started and self.twitch_bot is not None:
+                asyncio.run_coroutine_threadsafe(self.twitch_bot.stop_TwitchBot(), self.loop)
+                self.started = False
+
+            # Stop the asyncio event loop
+            if self.loop.is_running():
+                self.loop.call_soon_threadsafe(self.loop.stop)
+                self.loop_thread.join(timeout=2)  # Wait for the thread to finish
+
+            # Restore stdout and stderr
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+
+            # Destroy the GUI window
+            self.destroy()
+
+    def _finalize_quit(self):
+        try:
+            # Wait for the event loop thread to finish
             if hasattr(self, "loop_thread"):
-                self.loop_thread.join()
-            self.loop.close()
-        
-        self.after_cancel("all")
-        self.destroy()
+                self.loop_thread.join(timeout=2)
+            # Now close the loop
+            if hasattr(self, "loop"):
+                self.loop.close()
+        except Exception as e:
+            logging.error(f"Error during finalize quit: {e}")
+        finally:
+            os._exit(0)
         
 class Settings(customtkinter.CTk):
     def __init__(self, on_save_callback=None):

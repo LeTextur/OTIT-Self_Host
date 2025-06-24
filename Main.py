@@ -11,13 +11,15 @@ from osu import Client
 from threading import Thread
 import logging
 from pathlib import Path
+from lang_utils import Translator
 
 
 class TwitchBot:
-    def __init__(self):
+    def __init__(self, loop=None):
         self.env_path = Path(__file__).parent / ".env"
         load_dotenv(dotenv_path=self.env_path, override=True)
         self.TARGET_CHANNEL = os.getenv("TWITCH_TARGET_CHANNEL")
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
 
     
         self.osu_api = Client.from_credentials(
@@ -25,17 +27,15 @@ class TwitchBot:
             client_secret=os.getenv("OSU_CLIENT_SECRET"),
             redirect_url=os.getenv("REDIRECT_URL"),
         )
-        self.worker_task = None
+        self.queue = asyncio.Queue()
         self.irc_bot_thread = None
-        self.chat_ready = asyncio.Event()
-
+        self.loop = loop
                 
    # If bot connected successfully    
     async def on_ready(self, ready_event: EventData):
         # Join the channel
         await ready_event.chat.join_room(self.TARGET_CHANNEL)
         logging.info(f"Joined Twitch channel: {self.TARGET_CHANNEL}")
-        self.chat_ready.set()  # Mark chat as ready
         
         
     # Listening to the chat messages
@@ -50,14 +50,18 @@ class TwitchBot:
             logging.info(f"Detected osu! beatmap link: {match[0]}")
             # Preparing to send the beatmap_id to the OSUAPI
             beatmap_id = str(match.group(2)).split("/")[-1]
+            
                 
             # Add beatmap_id to the queue
-            self.irc_bot.messages_queue.put((os.getenv("IRC_NICK"), beatmap_id, msg.user.display_name))
-            logging.info(f"Queue size after adding: {self.irc_bot.messages_queue.qsize()}")
+            asyncio.run_coroutine_threadsafe(
+            self.add_to_queue(os.getenv("IRC_NICK"), beatmap_id, msg.user.display_name),
+            self.loop
+            )
             
-            # Start worker if not running
-            if not self.worker_task or self.worker_task.done():
-                self.worker_task = asyncio.create_task(self.request_worker())
+    # just to see how big is Queue after adding a request
+    async def add_to_queue(self, nick, beatmap_id, display_name):
+        await self.queue.put((nick, beatmap_id, display_name))
+        logging.info(f"Queue size after adding: {self.queue.qsize()}")
 
 
     async def start_TwitchBot(self):
@@ -87,6 +91,9 @@ class TwitchBot:
         self.chat.start()
         self.chat_state = True
         
+        # Start worker
+        self.worker_task = asyncio.create_task(self.request_worker())
+        
         
         if self.irc_bot_thread is None:
             self.irc_bot = IrcBot()
@@ -95,22 +102,34 @@ class TwitchBot:
         
         
     async def stop_TwitchBot(self):
-        # Cancel the worker task if running
+        # cancel if worker task is running
+        logging.info("Cancelling worker task...")
         if self.worker_task and not self.worker_task.done():
             loop = self.worker_task.get_loop()
-            # Cancel the task in its own loop
             def cancel_task():
                 self.worker_task.cancel()
             loop.call_soon_threadsafe(cancel_task)
 
         self.chat_state = False
-        await self.chat.send_message(self.TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
-        self.chat.stop()
-        await self.bot.close()
-        
-        
 
+        try:
+            logging.info("Sending shutdown message to chat...")
+            await self.chat.send_message(self.TARGET_CHANNEL, "[BOT] Request bot został wyłączony")
+        except Exception as e:
+            logging.error(f"Error sending shutdown message: {e}")
 
+        try:
+            logging.info("Stopping chat...")
+            self.chat.stop()
+        except Exception as e:
+            logging.error(f"Error stopping chat: {e}")
+
+        try:
+            logging.info("Closing bot...")
+            await self.bot.close()
+        except Exception as e:
+            logging.error(f"Error closing bot: {e}")
+        
     # commands
     
     # !np command
@@ -146,15 +165,11 @@ class TwitchBot:
         
     # Function to handle requests
     async def request_worker(self):
-        loop = asyncio.get_running_loop()
-        while True:
-            try:
-                logging.info("Worker waiting for new request...")
-                target, beatmap_id, name = await loop.run_in_executor(None, self.irc_bot.messages_queue.get)
+        logging.info("Request worker started")
+        try:
+            while True:
+                target, beatmap_id, name = await self.queue.get()
                 logging.info(f"starting processing request from {name}")
-
-                await self.chat_ready.wait()  # Wait until chat is ready
-
                 try:
                     # Process the beatmap
                     beatmap_properties_list = self.get_beatmap_properties(beatmap_id)
@@ -167,34 +182,23 @@ class TwitchBot:
                     
                     # Send the message
                     self.irc_bot.send_message(target, osu_msg)
-                    if self.chat_state:
-                        await self.chat.send_message(self.TARGET_CHANNEL, f"[BOT] {name} wysłał requesta")
-                    else:
-                        logging.warning("Twitch message not send: Bot not connected to Twitch")
+                    await self.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message4", name=name))
                 except Exception as e:
                     logging.error(f"Error sending message: {e}")
                 finally:
                     # Mark the task as done in the queue
-                    self.irc_bot.messages_queue.task_done()
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logging.error(f"Worker crashed: {e}")
-
+                    self.queue.task_done()
+        except asyncio.CancelledError:
+            logging.info("Request worker cancelled. Extiting worker")
+            return    
             
     # Function to get beatmap properties
     def get_beatmap_properties(self, id):
         
-        # OSU API credentials
-        osu_auth_dict = {
-            "client_id": os.getenv("OSU_CLIENT_ID"),
-            "client_secret": os.getenv("OSU_CLIENT_SECRET"),
-            "redirect_url": os.getenv("REDIRECT_URL")
-            }
-
-        client = Client.from_credentials(osu_auth_dict["client_id"], osu_auth_dict["client_secret"], osu_auth_dict["redirect_url"])
-        
+        logging.info(f"Processing beatmap id: {id} properties")
+        client = self.osu_api         
         # Getting beatmap properties
+        
         beatmap_SR = round(client.get_beatmap_attributes(id).star_rating, 2)
         beatmap_artist = client.get_beatmap(id).beatmapset.artist
         beatmap_title = client.get_beatmap(id).beatmapset.title
@@ -202,6 +206,8 @@ class TwitchBot:
         beatmap_bpm = client.get_beatmap(id).bpm
         beatmap_length = self.convert_seconds_to_readable(client.get_beatmap(id).total_length)
         beatmap_link = f"https://osu.ppy.sh/b/{id}"
+        
+        logging.info(f"Done processing properties from map id: {id}")
         return beatmap_artist, beatmap_title, beatmap_diff, beatmap_SR, beatmap_link, beatmap_bpm , beatmap_length
     
 
@@ -215,3 +221,4 @@ class TwitchBot:
             return f'{minutes:g}:{seconds:02g}'
         else:
             return f'{hours:g}:{minutes:02g}:{seconds:02g}'
+
