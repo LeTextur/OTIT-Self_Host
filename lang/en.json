@@ -44,14 +44,14 @@
     "settings-gui-tutorial-btn": "Tutorial (coming soon)",
     "settings-gui-save-btn": "Save",
 
-    "main-gui-irc-console-info1": "Initializing IrcBot with nickname: {os.getenv('IRC_NICK')}, server: {server}, port: {port}",
-    "main-gui-irc-console-info2": "Connected to osu!IRC server as {self._nickname}",
+    "main-gui-irc-console-info1": "Initializing IrcBot with nickname: {nick}, server: {server}, port: {port}",
+    "main-gui-irc-console-info2": "Connected to osu!IRC server as {nickname}",
     "main-gui-irc-console-info3": "In-Game-message was successfully sent to {target}",
     "main-gui-irc-console-info4": "Reconnect successfull",
 
     "main-gui-irc-console-error1": "Cannot send message: Not connected to IRC server!",
-    "main-gui-irc-console-error2": "Recconection failed: {e}",
-    "main-gui-irc-console-error3": "Error sending message to {target}: {e}",
+    "main-gui-irc-console-error2": "Recconection failed: {error}",
+    "main-gui-irc-console-error3": "Error sending message to {target}: {error}",
 
     "main-gui-twitch-console-info1": "Joined Twitch channel: {self.TARGET_CHANNEL}",
     "main-gui-twitch-console-info2": "Detected osu! beatmap link: {match[0]}",

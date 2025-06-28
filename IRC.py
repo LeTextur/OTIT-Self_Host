@@ -19,7 +19,7 @@ class IrcBot(SingleServerIRCBot):
         load_dotenv(dotenv_path=env_path, override=True)
         
         # connecting to IRC server
-        logging.info(f"Initializing IrcBot with nickname: {os.getenv("IRC_NICK")}, server: {server}, port: {port}")
+        logging.info(self.translator.t("main-gui-irc-console-info1", server=server, port=port, nick=os.getenv('IRC_NICK')))
         recon = ExponentialBackoff(min_interval=5, max_interval=30)
         SingleServerIRCBot.__init__(self, [(server, port, os.getenv("IRC_PASSWORD"))], os.getenv("IRC_NICK"), os.getenv("IRC_NICK"), recon=recon)
         self.connection.set_rate_limit(1)
@@ -27,22 +27,22 @@ class IrcBot(SingleServerIRCBot):
        
 
     def on_welcome(self, c: ServerConnection, e: Event):
-        logging.info(f"Connected to osu!IRC server as {self._nickname}")
+        logging.info(self.translator.t("main-gui-irc-console-info2", nickname=self._nickname))
 
     def send_message(self, target: str, text: str):
         if not self.connection.is_connected():
-            logging.error("Cannot send message: Not connected to IRC server!")
+            logging.error(self.translator.t("main-gui-irc-console-error1"))
             try:
                 self.connect("irc.ppy.sh", 6667, os.getenv("IRC_NICK"), os.getenv("IRC_PASSWORD"))
-                logging.info("Reconnect succesful.")
+                logging.info(self.translator.t("main-gui-irc-console-info4"))
             except Exception as e:
-                logging.error(f"Recconection failed: {e}")
+                logging.error(self.translator.t("main-gui-irc-console-error2"), error = e)
                 return
         
         try:
             target = target.replace(" ", "_")
             self.connection.privmsg(target, text)
-            logging.info(f"In-Game message was successfully sent to {target}")
+            logging.info(self.translator.t("main-gui-irc-console-info3"), target=target)
         except Exception as e:
-            logging.error(f"Error sending message to {target}: {e}")
+            logging.error(self.translator.t("main-gui-irc-console-error3"),target=target, error = e)
             

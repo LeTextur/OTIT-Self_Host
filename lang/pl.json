@@ -1,7 +1,7 @@
 {
     "api-conf-title-p1": "Konfiguracja Twitch API",
     "api-conf-title-p2": "Konfiguracja osu! API",
-    "api-conf-title-p3": "Konfiguracja IRC connection",
+    "api-conf-title-p3": "Konfiguracja połączenia IRC",
     "prev-btn": "Poprzedni",
     "next-btn": "Następny",
     "finish-btn": "Zakończ",
@@ -23,66 +23,66 @@
     "main-gui-stop-btn": "Wyłącz",
     "main-gui-quit-btn": "Wyjdź",
 
-    "main-gui-console-info1": "Starting the bot...",
-    "main-gui-console-info2": "The bot stopped",
-    "main-gui-console-info3": "Settings saved",
+    "main-gui-console-info1": "Włączanie...",
+    "main-gui-console-info2": "Wyłączono",
+    "main-gui-console-info3": "Zapisano ustawienia",
 
-    "main-gui-console-error1": "Error during finalize quit: ",
+    "main-gui-console-error1": "Pojawił się błąd podczas wyłączania",
 
-    "settings-gui-error1": "!np command directory is blank",
-    "settings-gui-messagebox-error": "Error occurred. Chceck the .txt directory path",
-    "settings-gui-error2": "!pp command directory is blank",
+    "settings-gui-error1": "Ścieżka pliku dla komendy !np jest pusta!",
+    "settings-gui-messagebox-error": "Pojawił się błąd. Sprawdź Ścieżki plików .txt",
+    "settings-gui-error2": "Ścieżka pliku dla komendy !pp jest pusta!",
     
-    "settings-gui-label1": "Commands config",
-    "settings-gui-label2": "Enter a .txt directory where you can find information about PP",
-    "settings-gui-label3": "Enter a .txt directory where you can find information about the current map.",
-    "settings-gui-text": "For the commands to work properly, you need StreamCompanion or another program that can export data from osu to a .txt file.",
-    "settings-gui-switch1": "Turn on !pp command",
-    "settings-gui-switch2": "Turn on !np command",
+    "settings-gui-label1": "Ustawienia komend",
+    "settings-gui-label2": "Wybierz ścieżkę dla pliku .txt w którym znajdują się informacje o PP",
+    "settings-gui-label3": "Wybierz ścieżkę dla pliku .txt w którym znajdują się informacje o aktualnej mapie",
+    "settings-gui-text": "Do poprawnego działania komend wymagany jest program StreamCompanion lub inny program który potrafi eksportować dane z osu do pliku .txt",
+    "settings-gui-switch1": "Włącz komende !pp",
+    "settings-gui-switch2": "Włącz komende !np",
 
-    "settings-gui-directory-browse-btn": "Browse",
-    "settings-gui-tutorial-btn": "Tutorial (coming soon)",
-    "settings-gui-save-btn": "Save",
+    "settings-gui-directory-browse-btn": "Wyszukaj",
+    "settings-gui-tutorial-btn": "Poradnik (Będzie później)",
+    "settings-gui-save-btn": "Zapisz",
 
-    "main-gui-irc-console-info1": "Initializing IrcBot with nickname: {os.getenv('IRC_NICK')}, server: {server}, port: {port}",
-    "main-gui-irc-console-info2": "Connected to osu!IRC server as {self._nickname}",
-    "main-gui-irc-console-info3": "In-Game-message was successfully sent to {target}",
-    "main-gui-irc-console-info4": "Reconnect successfull",
+    "main-gui-irc-console-info1": 
+    "main-gui-irc-console-info2": 
+    "main-gui-irc-console-info3": 
+    "main-gui-irc-console-info4": 
 
-    "main-gui-irc-console-error1": "Cannot send message: Not connected to IRC server!",
-    "main-gui-irc-console-error2": "Recconection failed: {e}",
-    "main-gui-irc-console-error3": "Error sending message to {target}: {e}",
+    "main-gui-irc-console-error1": 
+    "main-gui-irc-console-error2": 
+    "main-gui-irc-console-error3": 
 
-    "main-gui-twitch-console-info1": "Joined Twitch channel: {self.TARGET_CHANNEL}",
-    "main-gui-twitch-console-info2": "Detected osu! beatmap link: {match[0]}",
-    "main-gui-twitch-console-info3": "Queue size after adding: {self.queue.qsize()}",
-    "main-gui-twitch-console-info4": "Cancelling worker task...",
-    "main-gui-twitch-console-info5": "Sending shutdown message to chat...",
-    "main-gui-twitch-console-info6": "Stopping chat...",
-    "main-gui-twitch-console-info7": "Closing bot...",
-    "main-gui-twitch-console-info8": "the !np command was used and the currently played beatmap link was displayed",
-    "main-gui-twitch-console-info9": "the !pp command was used and the amount of pp for each acc value was displayed",
-    "main-gui-twitch-console-info10": "Request worker started",
-    "main-gui-twitch-console-info11": "starting processing request from {name}",
-    "main-gui-twitch-console-info12": "Request worker cancelled. Extiting worker",
+    "main-gui-twitch-console-info1": 
+    "main-gui-twitch-console-info2": 
+    "main-gui-twitch-console-info3": 
+    "main-gui-twitch-console-info4": 
+    "main-gui-twitch-console-info5": 
+    "main-gui-twitch-console-info6": 
+    "main-gui-twitch-console-info7": 
+    "main-gui-twitch-console-info8": 
+    "main-gui-twitch-console-info9": 
+    "main-gui-twitch-console-info10": 
+    "main-gui-twitch-console-info11": 
+    "main-gui-twitch-console-info12": 
 
-    "main-gui-twitch-console-warn1": "!np command is disabled. Check Settings",
-    "main-gui-twitch-console-warn2": "!pp command is disabled. Check Settings",
+    "main-gui-twitch-console-warn1": 
+    "main-gui-twitch-console-warn2": 
 
-    "main-gui-twitch-console-error1": "!pp command is disabled. Check Settings",
-    "main-gui-twitch-console-error2": "Error stopping chat: {e}",
-    "main-gui-twitch-console-error3": "Error closing bot: {e}",
-    "main-gui-twitch-console-error4": "An error occurred while trying to get the currently played map: {e}",
-    "main-gui-twitch-console-error5": "An error occurred while trying to get the currently pp for a map: {e}",
-    "main-gui-twitch-console-error6": "Error sending message: {e}",
+    "main-gui-twitch-console-error1": 
+    "main-gui-twitch-console-error2": 
+    "main-gui-twitch-console-error3": 
+    "main-gui-twitch-console-error4": 
+    "main-gui-twitch-console-error5": 
+    "main-gui-twitch-console-error6": 
     
-    "main-gui-osuapi-console-info1": "Processing beatmap id: {id} properties",
-    "main-gui-osuapi-console-info2": "Done processing properties from map id: {id}",
+    "main-gui-osuapi-console-info1": 
+    "main-gui-osuapi-console-info2": 
 
-    "twitch-send-message1": "[BOT] Request bot has been turned off",
-    "twitch-send-message2": "[BOT] Unable to get currently played map",
-    "twitch-send-message3": "[BOT] Unable to get PP value for a map",
-    "twitch-send-message4": "[BOT] {name} sent a request"
+    "twitch-send-message1": 
+    "twitch-send-message2": 
+    "twitch-send-message3": 
+    "twitch-send-message4": 
 
 
 
