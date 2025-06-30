@@ -65,19 +65,19 @@ class MainGui(customtkinter.CTk):
         logging.getLogger().setLevel(logging.INFO)
             
         # settings buttons - (settings_frame)
-        self.start_button = customtkinter.CTkButton(self.settings_frame, text="Start Bot", command=self.start, fg_color="green")
+        self.start_button = customtkinter.CTkButton(self.settings_frame, text=self.translator.t("main-gui-start-btn"), command=self.start, fg_color="green")
         self.start_button.grid(row=0, column=0, padx=20, pady=(10, 5))
         
-        self.setup_button = customtkinter.CTkButton(self.settings_frame, text="API's Config", command=self.api_setup)
+        self.setup_button = customtkinter.CTkButton(self.settings_frame, text=self.translator.t("main-gui-api-conf-btn"), command=self.api_setup)
         self.setup_button.grid(row=1, column=0, padx=20, pady=5)
         
-        self.settings_button = customtkinter.CTkButton(self.settings_frame, text="Settings", command=self.opening_settings)
+        self.settings_button = customtkinter.CTkButton(self.settings_frame, text=self.translator.t("main-gui-settings-btn"), command=self.opening_settings)
         self.settings_button.grid(row=2, column=0, padx=20, pady=5)
         
-        self.stop_button = customtkinter.CTkButton(self.settings_frame, text="Stop Bot", command=self.stop, state="disabled", fg_color="darkred")
+        self.stop_button = customtkinter.CTkButton(self.settings_frame, text=self.translator.t("main-gui-stop-btn"), command=self.stop, state="disabled", fg_color="darkred")
         self.stop_button.grid(row=3, column=0, padx=20, pady=(300, 5))
         
-        self.quit_button = customtkinter.CTkButton(self.settings_frame, text="Quit", command=self.quit, fg_color="darkred")
+        self.quit_button = customtkinter.CTkButton(self.settings_frame, text=self.translator.t("main-gui-quit-btn"), command=self.quit, fg_color="darkred")
         self.quit_button.grid(row=4, column=0, padx=20, pady=5)
         
         self.close_program = None
@@ -120,7 +120,7 @@ class MainGui(customtkinter.CTk):
         if self.twitch_bot is None:
             self.twitch_bot = TwitchBot(loop=self.loop)
         
-        logging.info("Starting the bot...")
+        logging.info(self.translator.t("main-gui-console-info1"))
         self.start_button.configure(state="disabled", fg_color="darkorange")
         self.setup_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
@@ -136,7 +136,7 @@ class MainGui(customtkinter.CTk):
         if self.twitch_bot is not None:
             asyncio.run_coroutine_threadsafe(self.twitch_bot.stop_TwitchBot(), self.loop)
         self.started = False
-        logging.info("The bot stopped.")
+        logging.info(self.translator.t("main-gui-console-info2"))
         self.start_button.configure(state="normal", fg_color="green")
         self.setup_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
@@ -169,13 +169,14 @@ class MainGui(customtkinter.CTk):
             if hasattr(self, "loop"):
                 self.loop.close()
         except Exception as e:
-            logging.error(f"Error during finalize quit: {e}")
+            logging.error(self.translator.t("main-gui-console-error1"), error = e)
         finally:
             os._exit(0)
         
 class Settings(customtkinter.CTk):
     def __init__(self, on_save_callback=None):
         super().__init__()
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
         self.on_save_callback = on_save_callback
         
         # Set the appearance mode and color theme
@@ -190,38 +191,38 @@ class Settings(customtkinter.CTk):
         self.geometry("360x500")
         self.resizable(False, False)
         
-        self.command_label = customtkinter.CTkLabel(self, text="Commands config", font=("Nunito", 20))
+        self.command_label = customtkinter.CTkLabel(self, text=self.translator.t("settings-gui-label1"), font=("Nunito", 20))
         self.command_label.grid(row=0, column=0, padx=20, pady=(20,5), columnspan=2)
         
         self.additional_text = tkinter.Text(self, font=("Nunito", 10), wrap=tkinter.WORD, bg="#282424", fg="#dce4ee", bd=0, height=3)
-        self.additional_text.insert("1.0","Do poprawnego działania komend wymagany jest program StreamCompanion lub inny program który potrafi eksportować dane z osu do pliku .txt")
+        self.additional_text.insert("1.0",self.translator.t("settings-gui-text"))
         self.additional_text.configure(state="disabled")
         self.additional_text.grid(row=1, column=0, pady=5, padx=20, columnspan=2)
         
-        self.pp_switch = customtkinter.CTkSwitch(self, text="Turn on !pp command", font=("Nunito", 12), command=self.toggle_widgets)
+        self.pp_switch = customtkinter.CTkSwitch(self, text=self.translator.t("settings-gui-switch1"), font=("Nunito", 12), command=self.toggle_widgets)
         self.pp_switch.grid(row=2, column=0, padx=20, pady=(20, 0), sticky="w")
         
-        self.pp_label = customtkinter.CTkLabel(self, text="Podaj lokalizacje pliku .txt gdzie znajdują się informacje o PP", font=("Nunito", 10), anchor="w")
+        self.pp_label = customtkinter.CTkLabel(self, text=self.translator.t("settings-gui-label2"), font=("Nunito", 10), anchor="w")
         
         self.pp_export_file_directory = customtkinter.CTkEntry(self, placeholder_text="PP export file directory", font=("Nunito", 12), state="disabled", width=450)
         
-        self.pp_export_file_directory_browse = customtkinter.CTkButton(self, text="Browse", font=("Nunito", 12), width=50, state="disabled", command=self.pp_file_import_directory)
+        self.pp_export_file_directory_browse = customtkinter.CTkButton(self, text=self.translator.t("settings-gui-directory-browse-btn"), font=("Nunito", 12), width=50, state="disabled", command=self.pp_file_import_directory)
         
         
-        self.np_switch = customtkinter.CTkSwitch(self, text="Turn on !np command", font=("Nunito", 12), command=self.toggle_widgets)
+        self.np_switch = customtkinter.CTkSwitch(self, text=self.translator.t("settings-gui-switch2"), font=("Nunito", 12), command=self.toggle_widgets)
         self.np_switch.grid(row=5, column=0, padx=20, pady=(20, 0), sticky="w")
         
-        self.np_label = customtkinter.CTkLabel(self, text="Podaj lokalizacje pliku .txt gdzie znajdują się informacje o aktualnej mapie", font=("Nunito", 10), anchor="w")
+        self.np_label = customtkinter.CTkLabel(self, text=self.translator.t("settings-gui-label3"), font=("Nunito", 10), anchor="w")
         
         self.np_export_file_directory = customtkinter.CTkEntry(self, placeholder_text="NP export file directory", font=("Nunito", 12), state="disabled", width=250)
         
-        self.np_export_file_directory_browse = customtkinter.CTkButton(self, text="Browse", font=("Nunito", 12), width=50, state="disabled", command=self.np_file_import_directory)
+        self.np_export_file_directory_browse = customtkinter.CTkButton(self, text=self.translator.t("settings-gui-directory-browse-btn"), font=("Nunito", 12), width=50, state="disabled", command=self.np_file_import_directory)
         
         
-        self.settings_tutorial = customtkinter.CTkButton(self, text="Tutorial (będzie później)", font=("Nunito", 12), width=100, state="disabled")
+        self.settings_tutorial = customtkinter.CTkButton(self, text=self.translator.t("settings-gui-tutorial-btn"), font=("Nunito", 12), width=100, state="disabled")
         self.settings_tutorial.grid(row=8, column=0, padx=(20,5), pady=(80,20), sticky="w")
         
-        self.settings_buttons = customtkinter.CTkButton(self, text="Save", font=("Nunito", 12),  width=100, command=self.save_path_entries)
+        self.settings_buttons = customtkinter.CTkButton(self, text=self.translator.t("settings-gui-save-btn"), font=("Nunito", 12),  width=100, command=self.save_path_entries)
         self.settings_buttons.grid(row=8, column=1, padx=(0,20), pady=(80,20), sticky="e")
         
         #check if PP command was enabled
@@ -308,8 +309,8 @@ class Settings(customtkinter.CTk):
             np_file_directory = self.np_export_file_directory.get()
             
             if np_file_directory == "":
-                logging.error(f"!np command directory are blank")
-                tkinter.messagebox.showerror("Blank Entry error" ,"Nastąpił błąd. Sprawdź ścieżki plików txt")
+                logging.error(self.translator.t("settings-gui-error1"))
+                tkinter.messagebox.showerror("Blank Entry error" , self.translator.t("settings-gui-messagebox-error"))
                 return
                 
             elif os.getenv("NP_FILE_PATH") != np_file_directory:
@@ -322,8 +323,8 @@ class Settings(customtkinter.CTk):
             pp_file_directory = self.pp_export_file_directory.get()
             
             if pp_file_directory == "":
-                logging.error(f"!pp command directory are blank")
-                tkinter.messagebox.showerror("Blank Entry error" ,"Nastąpił błąd. Sprawdź ścieżki plików txt")
+                logging.error(self.translator.t("settings-gui-error2"))
+                tkinter.messagebox.showerror("Blank Entry error" , self.translator.t("settings-gui-messagebox-error"))
                 return
             
             elif os.getenv("PP_FILE_PATH") != pp_file_directory:
@@ -337,5 +338,5 @@ class Settings(customtkinter.CTk):
             self.on_save_callback()
             
         self.destroy()
-        logging.info("Settings saved")
+        logging.info(self.translator.t("main-gui-console-info3"))
 

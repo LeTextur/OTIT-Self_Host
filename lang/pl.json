@@ -11,7 +11,7 @@
     "api-conf-messagebox-error":"Proszę wypełnić wszystkie Pola.\nBrakujące pola: {fields}",
     "api-conf-info":"Zapisano ustawienie do pliku .env",
 
-    "api-conf-tutorial-btn": "Samouczek",
+    "api-conf-tutorial-btn": "Poradnik",
     "api-conf-tutorial-desc1": "Wejdź na stronę: \n",
     "api-conf-tutorial-desc2": "i zarejestruj nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne. Po rejestracji, kliknij zarządzaj obok twojej aplikacji. Na dole strony znajdziesz Identyfikator klienta (Twitch Client ID) oraz do stworzenia Hasło klienta (Twitch Client SECRET).",
     "api-conf-tutorial-desc3": ". Zjedź na dół strony i kliknij w przycisk Nowa aplikacja OAuth. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Po stworzeniu aplikacji, klikając na edit możesz zobaczyć Client ID i Client Secret (client key).",
@@ -34,8 +34,8 @@
     "settings-gui-error2": "Ścieżka pliku dla komendy !pp jest pusta!",
     
     "settings-gui-label1": "Ustawienia komend",
-    "settings-gui-label2": "Wybierz ścieżkę dla pliku .txt w którym znajdują się informacje o PP",
-    "settings-gui-label3": "Wybierz ścieżkę dla pliku .txt w którym znajdują się informacje o aktualnej mapie",
+    "settings-gui-label2": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o PP",
+    "settings-gui-label3": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o aktualnej mapie",
     "settings-gui-text": "Do poprawnego działania komend wymagany jest program StreamCompanion lub inny program który potrafi eksportować dane z osu do pliku .txt",
     "settings-gui-switch1": "Włącz komende !pp",
     "settings-gui-switch2": "Włącz komende !np",
@@ -44,45 +44,45 @@
     "settings-gui-tutorial-btn": "Poradnik (Będzie później)",
     "settings-gui-save-btn": "Zapisz",
 
-    "main-gui-irc-console-info1": 
-    "main-gui-irc-console-info2": 
-    "main-gui-irc-console-info3": 
-    "main-gui-irc-console-info4": 
+    "main-gui-irc-console-info1": "Inicjalizowanie połączenia irc z nickiem: {nick}, serwerem: {server}, port: {port}",
+    "main-gui-irc-console-info2": "Połączono do serwera osu!IRC jako {nickname}",
+    "main-gui-irc-console-info3": "Wiadomość w grze została wysłana pomyślne do {target}",
+    "main-gui-irc-console-info4": "Ponowne połączenie udane",
 
-    "main-gui-irc-console-error1": 
-    "main-gui-irc-console-error2": 
-    "main-gui-irc-console-error3": 
+    "main-gui-irc-console-error1": "Nie udało się wysłać wiadomości: Nie połączono z serwerem IRC!",
+    "main-gui-irc-console-error2": "wystąpił błąd podczas ponownego połączenia: {error}",
+    "main-gui-irc-console-error3": "wystąpił błąd podczas wysyłania wiadomości do {target}: {error}",
 
-    "main-gui-twitch-console-info1": 
-    "main-gui-twitch-console-info2": 
-    "main-gui-twitch-console-info3": 
-    "main-gui-twitch-console-info4": 
-    "main-gui-twitch-console-info5": 
-    "main-gui-twitch-console-info6": 
-    "main-gui-twitch-console-info7": 
-    "main-gui-twitch-console-info8": 
-    "main-gui-twitch-console-info9": 
-    "main-gui-twitch-console-info10": 
-    "main-gui-twitch-console-info11": 
-    "main-gui-twitch-console-info12": 
+    "main-gui-twitch-console-info1": "Dołączono do kanału Twitch o nazwie: {channel}",
+    "main-gui-twitch-console-info2": "Wykryto beatmapę z osu. Link: {match}",
+    "main-gui-twitch-console-info3": "Kolejka po dodaniu: {queue_size}",
+    "main-gui-twitch-console-info4": "Anulowanie przetwarzania beatmap...",
+    "main-gui-twitch-console-info5": "Wysyłanie wiadomości o wyłączeniu do czatu",
+    "main-gui-twitch-console-info6": "Wyłączanie czatu...",
+    "main-gui-twitch-console-info7": "Wyłączanie...",
+    "main-gui-twitch-console-info8": "Użyto komendy !np i pokazano aktualną zagraną mapę",
+    "main-gui-twitch-console-info9": "Użyto komendy !pp i pokazano informacje o PP",
+    "main-gui-twitch-console-info10": "Wystartowano przetwarzanie beatmap",
+    "main-gui-twitch-console-info11": "Przetwarzanie beatmapy od {name}",
+    "main-gui-twitch-console-info12": "Przetwarzanie beatmap został anulowany",
 
-    "main-gui-twitch-console-warn1": 
-    "main-gui-twitch-console-warn2": 
+    "main-gui-twitch-console-warn1": "komenda !np jest wyłączona. Sprawdź ustawienia",
+    "main-gui-twitch-console-warn2": "komenda !pp jest wyłączona. Sprawdź ustawienia",
 
-    "main-gui-twitch-console-error1": 
-    "main-gui-twitch-console-error2": 
-    "main-gui-twitch-console-error3": 
-    "main-gui-twitch-console-error4": 
-    "main-gui-twitch-console-error5": 
-    "main-gui-twitch-console-error6": 
+    "main-gui-twitch-console-error1": "Nastąpił błąd podczas wysyłania wiadomości o wyłączeniu: {error}",
+    "main-gui-twitch-console-error2": "Nastąpił błąd podczas wyłączania chatu: {error}",
+    "main-gui-twitch-console-error3": "Nastąpił błąd podczas wyłączania: {error}",
+    "main-gui-twitch-console-error4": "Nastąpił błąd po próbie uzyskania informacji na temat aktualnej mapie: {error}",
+    "main-gui-twitch-console-error5": "Nastąpił błąd po próbie uzyskanie informacji na temat PP: {error}",
+    "main-gui-twitch-console-error6": "Nastąpił błąd podczas wysyłania wiadomości: {error}",
     
-    "main-gui-osuapi-console-info1": 
-    "main-gui-osuapi-console-info2": 
+    "main-gui-osuapi-console-info1": "Przetwarzam właściwości dla mapy o id: {id}",
+    "main-gui-osuapi-console-info2": "Przetworzono właściwości dla mapy o id: {id}",
 
-    "twitch-send-message1": 
-    "twitch-send-message2": 
-    "twitch-send-message3": 
-    "twitch-send-message4": 
+    "twitch-send-message1": "[BOT] Request bot został wyłączony",
+    "twitch-send-message2": "[BOT] Nie udało się pobrać aktualnie granej mapy",
+    "twitch-send-message3": "[BOT] Nie udało się pobrać PP za mapę",
+    "twitch-send-message4": "[BOT] Request od {name} został wysłany"
 
 
 
