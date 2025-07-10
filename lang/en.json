@@ -12,10 +12,10 @@
     "api-conf-info":"Saved entries to .env file",
 
     "api-conf-tutorial-btn": "Tutorial",
-    "api-conf-tutorial-desc1": "Go to:",
-    "api-conf-tutorial-desc2": "and register a new app. In the first field, enter a name of App. In the second field, enter the redirect URL: http://localhost:17563 . Select 'Game Integration' as a application category and for the client type, select 'Confidential'. Click 'Manage' next to your aplication after registration. At the bottom of the page, you will find Client ID (Twitch Client ID) and the Client Password (Twitch Client SECRET) to create.",
-    "api-conf-tutorial-desc3": "and scroll down to the bottom of the page and click on 'New OAuth Application' button. In the first field, enter the name of the application, and in the second field, enter the redirct URL: http://localhost:17563 . After creating the application, click on edit to view the Client ID and Client Secret (client key).",
-    "api-conf-tutorial-desc4": "At the bottom of the page, you'll find the IRC section. After clicking 'the New Password button for the older IRC' the password and nickname will appear",
+    "api-conf-tutorial-desc1": "Go to: \n",
+    "api-conf-tutorial-desc2": " and register a new app. In the first field, enter a name of App. In the second field, enter the redirect URL: http://localhost:17563 . Select 'Game Integration' as a application category and for the client type, select 'Confidential'. Click 'Manage' next to your aplication after registration. At the bottom of the page, you will find Client ID (Twitch Client ID) and the Client Password (Twitch Client SECRET) to create.",
+    "api-conf-tutorial-desc3": " and scroll down to the bottom of the page and click on 'New OAuth Application' button. In the first field, enter the name of the application, and in the second field, enter the redirct URL: http://localhost:17563 . After creating the application, click on edit to view the Client ID and Client Secret (client key).",
+    "api-conf-tutorial-desc4": " At the bottom of the page, you'll find the IRC section. After clicking 'the New Password button for the older IRC' the password and nickname will appear",
 
     "main-gui-start-btn": "Start Bot",
     "main-gui-api-conf-btn": "API's Config",
@@ -30,12 +30,18 @@
     "main-gui-console-error1": "Error during finalize quit: {error}",
 
     "settings-gui-error1": "!np command directory is blank",
-    "settings-gui-messagebox-error": "Error occurred. Chceck the .txt directory path",
+    "settings-gui-messagebox-error1": "Error occurred. Chceck the .txt directory path",
+    "settings-gui-messagebox-error2": "Error occurred. Max difficulty limit must be higher than min difficulty limit!",
     "settings-gui-error2": "!pp command directory is blank",
     
-    "settings-gui-label1": "Commands config",
-    "settings-gui-label2": "Enter a .txt directory where you can find information about PP",
-    "settings-gui-label3": "Enter a .txt directory where you can find information about the current map.",
+    "settings-gui-label1": "Settings",
+    "settings-gui-label2": "Commands",
+    "settings-gui-label3": "Enter a .txt directory where you can find information about PP",
+    "settings-gui-label4": "Enter a .txt directory where you can find information about the current map.",
+    "settings-gui-label5": "Others",
+    "settings-gui-label6": "Choose the minimum difficulty limit for request",
+    "settings-gui-label7": "Choose the maximum difficulty limit for request",
+    "settings-gui-diff-limit-warning": "The min. difficulty limit is higher than max. difficulty limit!",
     "settings-gui-text": "For the commands to work properly, you need StreamCompanion or another program that can export data from osu to a .txt file.",
     "settings-gui-switch1": "Turn on !pp command",
     "settings-gui-switch2": "Turn on !np command",
@@ -53,8 +59,8 @@
     "main-gui-irc-console-error2": "Recconection failed: {error}",
     "main-gui-irc-console-error3": "Error sending message to {target}: {error}",
 
-    "main-gui-twitch-console-info1": "Joined Twitch channel: {channel}",
-    "main-gui-twitch-console-info2": "Detected osu! beatmap link: {match}",
+    "main-gui-twitch-console-info1": "Joined Twitch channel: {target_channel}",
+    "main-gui-twitch-console-info2": "Detected osu! beatmap link: {link}",
     "main-gui-twitch-console-info3": "Queue size after adding: {queue_size}",
     "main-gui-twitch-console-info4": "Cancelling worker task...",
     "main-gui-twitch-console-info5": "Sending shutdown message to chat...",
@@ -82,10 +88,6 @@
     "twitch-send-message1": "[BOT] Request bot has been turned off",
     "twitch-send-message2": "[BOT] Unable to get currently played map",
     "twitch-send-message3": "[BOT] Unable to get PP value for a map",
-    "twitch-send-message4": "[BOT] {name} sent a request"
-
-
-
-    
-
+    "twitch-send-message4": "[BOT] {name} sent a request",
+    "twitch-send-message5": "[BOT] {name} Streamer is accepting requests between {min_diff}★ - {max_display} difficulty. Your map is {beatmap_sr}★."
 }

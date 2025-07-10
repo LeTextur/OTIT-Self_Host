@@ -13,7 +13,7 @@
 
     "api-conf-tutorial-btn": "Poradnik",
     "api-conf-tutorial-desc1": "Wejdź na stronę: \n",
-    "api-conf-tutorial-desc2": "i zarejestruj nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne. Po rejestracji, kliknij zarządzaj obok twojej aplikacji. Na dole strony znajdziesz Identyfikator klienta (Twitch Client ID) oraz do stworzenia Hasło klienta (Twitch Client SECRET).",
+    "api-conf-tutorial-desc2": " i zarejestruj nową aplikację. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Kategoria aplikacji wybierz Game Integration a typ klienta na Poufne. Po rejestracji, kliknij zarządzaj obok twojej aplikacji. Na dole strony znajdziesz Identyfikator klienta (Twitch Client ID) oraz do stworzenia Hasło klienta (Twitch Client SECRET).",
     "api-conf-tutorial-desc3": ". Zjedź na dół strony i kliknij w przycisk Nowa aplikacja OAuth. W pierwszym polu wpisz nazwę aplikacji, w drugim URL przekierowania: http://localhost:17563 . Po stworzeniu aplikacji, klikając na edit możesz zobaczyć Client ID i Client Secret (client key).",
     "api-conf-tutorial-desc4": ". Na samym dole strony znajdziesz sekcję IRC. Po kliknięciu w przycisk Nowe Hasło starszego IRC pojawi się hasło oraz nick.",
 
@@ -30,12 +30,18 @@
     "main-gui-console-error1": "Pojawił się błąd podczas wyłączania",
 
     "settings-gui-error1": "Ścieżka pliku dla komendy !np jest pusta!",
-    "settings-gui-messagebox-error": "Pojawił się błąd. Sprawdź Ścieżki plików .txt",
+    "settings-gui-messagebox-error1": "Pojawił się błąd. Sprawdź Ścieżki plików .txt",
+    "settings-gui-messagebox-error2": "Pojawił się błąd. Maksymalny limit trudności musi być wyższy niż minimalny limit trudności !",
     "settings-gui-error2": "Ścieżka pliku dla komendy !pp jest pusta!",
     
-    "settings-gui-label1": "Ustawienia komend",
-    "settings-gui-label2": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o PP",
-    "settings-gui-label3": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o aktualnej mapie",
+    "settings-gui-label1": "Ustawienia",
+    "settings-gui-label2": "Komendy",
+    "settings-gui-label3": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o PP",
+    "settings-gui-label4": "Podaj lokalizacje pliku .txt gdzie znajdują się informacje o aktualnej mapie",
+    "settings-gui-label5": "Inne",
+    "settings-gui-label6": "Wybierz minimalny limit trudności dla requesta",
+    "settings-gui-label7": "Wybierz maksymalny limit trudności dla requesta",
+    "settings-gui-diff-limit-warning": "Minimalny poziom trudości jest wyższy niż maksymalny!",
     "settings-gui-text": "Do poprawnego działania komend wymagany jest program StreamCompanion lub inny program który potrafi eksportować dane z osu do pliku .txt",
     "settings-gui-switch1": "Włącz komende !pp",
     "settings-gui-switch2": "Włącz komende !np",
@@ -53,8 +59,8 @@
     "main-gui-irc-console-error2": "wystąpił błąd podczas ponownego połączenia: {error}",
     "main-gui-irc-console-error3": "wystąpił błąd podczas wysyłania wiadomości do {target}: {error}",
 
-    "main-gui-twitch-console-info1": "Dołączono do kanału Twitch o nazwie: {channel}",
-    "main-gui-twitch-console-info2": "Wykryto beatmapę z osu. Link: {match}",
+    "main-gui-twitch-console-info1": "Dołączono do kanału Twitch o nazwie: {target_channel}",
+    "main-gui-twitch-console-info2": "Wykryto beatmapę z osu. Link: {link}",
     "main-gui-twitch-console-info3": "Kolejka po dodaniu: {queue_size}",
     "main-gui-twitch-console-info4": "Anulowanie przetwarzania beatmap...",
     "main-gui-twitch-console-info5": "Wysyłanie wiadomości o wyłączeniu do czatu",
@@ -82,10 +88,6 @@
     "twitch-send-message1": "[BOT] Request bot został wyłączony",
     "twitch-send-message2": "[BOT] Nie udało się pobrać aktualnie granej mapy",
     "twitch-send-message3": "[BOT] Nie udało się pobrać PP za mapę",
-    "twitch-send-message4": "[BOT] Request od {name} został wysłany"
-
-
-
-    
-
+    "twitch-send-message4": "[BOT] Request od {name} został wysłany",
+    "twitch-send-message5": "[BOT] {name} Streamer akceptuje jedynie poziomy {min_diff}★ - {max_display} . Twoja mapa ma {beatmap_sr}★."
 }

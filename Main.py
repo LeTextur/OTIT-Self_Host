@@ -35,7 +35,7 @@ class TwitchBot:
     async def on_ready(self, ready_event: EventData):
         # Join the channel
         await ready_event.chat.join_room(self.TARGET_CHANNEL)
-        logging.info(self.translator.t("main-gui-console-info1"), channel = self.TARGET_CHANNEL)
+        logging.info(self.translator.t("main-gui-twitch-console-info1", target_channel = self.TARGET_CHANNEL))
         
         
     # Listening to the chat messages
@@ -47,7 +47,7 @@ class TwitchBot:
         match = beatmap_link_pattern.search(msg.text)
     
         if match:
-            logging.info(self.translator.t("main-gui-console-info2"), match = match[0])
+            logging.info(self.translator.t("main-gui-twitch-console-info2", link = match[0]))
             # Preparing to send the beatmap_id to the OSUAPI
             beatmap_id = str(match.group(2)).split("/")[-1]
             
@@ -61,7 +61,7 @@ class TwitchBot:
     # just to see how big is Queue after adding a request
     async def add_to_queue(self, nick, beatmap_id, display_name):
         await self.queue.put((nick, beatmap_id, display_name))
-        logging.info(self.translator.t("main-gui-console-info3") , queue_size = self.queue.qsize())
+        logging.info(self.translator.t("main-gui-twitch-console-info3") , queue_size = self.queue.qsize())
 
 
     async def start_TwitchBot(self):
@@ -103,7 +103,7 @@ class TwitchBot:
         
     async def stop_TwitchBot(self):
         # cancel if worker task is running
-        logging.info(self.translator.t("main-gui-console-info4"))
+        logging.info(self.translator.t("main-gui-twitch-console-info4"))
         if self.worker_task and not self.worker_task.done():
             loop = self.worker_task.get_loop()
             def cancel_task():
@@ -113,22 +113,22 @@ class TwitchBot:
         self.chat_state = False
 
         try:
-            logging.info(self.translator.t("main-gui-console-info5"))
+            logging.info(self.translator.t("main-gui-twitch-console-info5"))
             await self.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message1"))
         except Exception as e:
-            logging.error(self.translator.t("main-gui-twitch-console-error1"), error = e)
+            logging.error(self.translator.t("main-gui-twitch-console-error1", error = e))
 
         try:
-            logging.info(self.translator.t("main-gui-console-info6"))
+            logging.info(self.translator.t("main-gui-twitch-console-info6"))
             self.chat.stop()
         except Exception as e:
-            logging.error(self.translator.t("main-gui-twitch-console-error2"), error = e)
+            logging.error(self.translator.t("main-gui-twitch-console-error2", error = e))
 
         try:
-            logging.info(self.translator.t("main-gui-console-info7"))
+            logging.info(self.translator.t("main-gui-twitch-console-info7"))
             await self.bot.close()
         except Exception as e:
-            logging.error(self.translator.t("main-gui-twitch-console-error3"), error = e)
+            logging.error(self.translator.t("main-gui-twitch-console-error3", error = e))
         
     # commands
     
@@ -141,11 +141,11 @@ class TwitchBot:
                 
                 await msg.chat.send_message(self.TARGET_CHANNEL, id_map.read())
                 id_map.close()
-                logging.info(self.translator.t("main-gui-console-info8"))
+                logging.info(self.translator.t("main-gui-twitch-console-info8"))
             except Exception as e:
-                logging.error(self.translator.t("main-gui-twitch-console-error4"), error = e)
+                logging.error(self.translator.t("main-gui-twitch-console-error4", error = e))
                 await msg.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-messag2"))
-        else: logging.warning(self.translator.t("main-gui-console-warn1"))
+        else: logging.warning(self.translator.t("main-gui-twitch-console-warn1"))
         
         
     # !pp command
@@ -156,46 +156,73 @@ class TwitchBot:
                 pp_status = open(os.getenv("PP_FILE_PATH"), "r")
                 await msg.chat.send_message(self.TARGET_CHANNEL, pp_status.read())
                 pp_status.close()
-                logging.info(self.translator.t("main-gui-console-info9"))
+                logging.info(self.translator.t("main-gui-twitch-console-info9"))
             except Exception as e:
-                logging.error(self.translator.t("main-gui-twitch-console-error5"), error = e)
+                logging.error(self.translator.t("main-gui-twitch-console-error5", error = e))
                 await msg.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message3"))
-        else: logging.warning(self.translator.t("main-gui-console-warn2"))
+        else: logging.warning(self.translator.t("main-gui-twitch-console-warn2"))
         
         
     # Function to handle requests
     async def request_worker(self):
-        logging.info(self.translator.t("main-gui-console-info10"))
+        logging.info(self.translator.t("main-gui-twitch-console-info10"))
+
         try:
             while True:
                 target, beatmap_id, name = await self.queue.get()
-                logging.info(self.translator.t("main-gui-console-info11", name=name))
+        
+                load_dotenv(dotenv_path=self.env_path, override=True)
+                
+                
+                diff_limit_str = os.getenv("DIFF_LIMIT")
+                try:
+                    difficulty_limit = diff_limit_str.split(",")
+                except Exception:
+                    difficulty_limit = [0,15]
+                
+                
+                
+                min_diff = float(difficulty_limit[0])
+                max_diff = float(difficulty_limit[1])
+        
+                logging.info(self.translator.t("main-gui-twitch-console-info11", name=name))
+                
+                # Treat 15 as infinity for max
+                is_infinite = max_diff == 15 
                 try:
                     # Process the beatmap
                     beatmap_properties_list = self.get_beatmap_properties(beatmap_id)
-                    osu_msg = (
-                        f"{name}  »  "
-                        f"[{beatmap_properties_list[4]} {beatmap_properties_list[0]} - {beatmap_properties_list[1]} "
-                        f"[{beatmap_properties_list[2]}]]   ({beatmap_properties_list[5]} BPM, {beatmap_properties_list[3]}★, "
-                        f"{beatmap_properties_list[6]})"
-                    )
-                    
-                    # Send the message
-                    self.irc_bot.send_message(target, osu_msg)
-                    await self.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message4", name=name))
+                    beatmap_sr = beatmap_properties_list[3]
+
+                    # Checking the difficulty limit
+                    if beatmap_sr < min_diff or (not is_infinite and beatmap_sr > max_diff):
+                        max_display = "∞" if is_infinite else f"{max_diff}★"
+                        await self.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message5", name = name, min_diff = min_diff, max_display = max_display, beatmap_sr = beatmap_sr))
+                    else:
+                        osu_msg = (
+                            f"{name}  »  "
+                            f"[{beatmap_properties_list[4]} {beatmap_properties_list[0]} - {beatmap_properties_list[1]} "
+                            f"[{beatmap_properties_list[2]}]]   ({beatmap_properties_list[5]} BPM, {beatmap_sr}★, "
+                            f"{beatmap_properties_list[6]})"
+                        )
+                        
+                        # Send the message
+                        self.irc_bot.send_message(target, osu_msg)
+                        await self.chat.send_message(self.TARGET_CHANNEL, self.translator.t("twitch-send-message4", name=name))
                 except Exception as e:
-                    logging.error(self.translator.t("main-gui-twitch-console-error6"), error = e)
+                    logging.error(self.translator.t("main-gui-twitch-console-error6", error = e))
                 finally:
+                    
                     # Mark the task as done in the queue
                     self.queue.task_done()
         except asyncio.CancelledError:
-            logging.info(self.translator.t("main-gui-console-info12"))
+            logging.info(self.translator.t("main-gui-twitch-console-info12"))
             return    
             
     # Function to get beatmap properties
     def get_beatmap_properties(self, id):
         
-        logging.info(self.translator.t("main-gui-osuapi-console-info1"), id = id)
+        logging.info(self.translator.t("main-gui-osuapi-console-info1", id = id))
         client = self.osu_api         
         # Getting beatmap properties
         
@@ -207,8 +234,9 @@ class TwitchBot:
         beatmap_length = self.convert_seconds_to_readable(client.get_beatmap(id).total_length)
         beatmap_link = f"https://osu.ppy.sh/b/{id}"
         
-        logging.info(self.translator.t("main-gui-osuapi-console-info2"), id = id)
+        logging.info(self.translator.t("main-gui-osuapi-console-info2", id = id))
         return beatmap_artist, beatmap_title, beatmap_diff, beatmap_SR, beatmap_link, beatmap_bpm , beatmap_length
+        
     
 
     """ Made by aticie """

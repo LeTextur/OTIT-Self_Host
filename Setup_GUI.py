@@ -1,5 +1,5 @@
 import customtkinter
-from tkinter import messagebox, END, WORD, Text, INSERT, filedialog
+from tkinter import messagebox, END, WORD, Text, INSERT, filedialog, PhotoImage
 from dotenv import load_dotenv, set_key
 from pathlib import Path
 import logging
@@ -8,23 +8,44 @@ import webbrowser
 from lang_utils import Translator
 
 class SetupGui(customtkinter.CTk):
-    def __init__(self):
+    def __init__(self, main_gui=None, on_save_callback=None):
         super().__init__()
+        self.on_save_callback = on_save_callback
+        self.main_gui = main_gui
         
-        self.translator = Translator(os.getenv("LANGUAGE", "en"))
+        self.env_path = Path(__file__).parent / ".env"
+        load_dotenv(dotenv_path=self.env_path, override=True)
+        
+        # Dynamically get available languages from lang folder
+        lang_dir = Path(__file__).parent / "lang"
+        lang_files = [f for f in os.listdir(lang_dir) if f.endswith(".json")]
+        self.available_languages = [os.path.splitext(f)[0] for f in lang_files]
+
+        self.language_var = customtkinter.StringVar(value=os.getenv("LANGUAGE", "en"))
+        self.language_menu = customtkinter.CTkOptionMenu(
+            self,
+            values=self.available_languages,
+            variable=self.language_var,
+            command=self.set_language,
+            width=20
+        )
+
+        
+
         
         logging.info("Starting GUI")
         
-        env_path = Path(__file__).parent / ".env"
-        load_dotenv(dotenv_path=env_path, override=True)
 
         # Set the appearance mode and color theme
         customtkinter.set_appearance_mode("System") 
-        customtkinter.set_default_color_theme("blue")  
+        customtkinter.set_default_color_theme("blue")
+        icon = Path(__file__).parent / "OTIT.ico"
+        self.iconbitmap(icon)
 
         self.first_time = os.getenv("FIRST_TIME_RUN")
         self.saved_entries = {}
         self.tutorial_window = None  # Reference to the Tutorial window
+        self.current_page_key = "api-conf-title-p1"  # Track the current page by key
         
         if self.first_time == "false":
             self.load_local_env()
@@ -35,6 +56,11 @@ class SetupGui(customtkinter.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.resizable(False, False)
+        
+        if os.getenv("FIRST_TIME_RUN") == 'true':
+            self.language_menu.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
+        
+        self.translator = Translator(os.getenv("LANGUAGE", "en"))
         
         # Create the main frame
         self.title_page = customtkinter.CTkLabel(self, text=self.translator.t("api-conf-title-p1"), font=("Nunito", 20))
@@ -58,8 +84,7 @@ class SetupGui(customtkinter.CTk):
         self.first_page()
         
     def load_local_env(self):
-        env_path = Path(__file__).parent / ".env"
-        load_dotenv(dotenv_path=env_path, override=True)
+        load_dotenv(dotenv_path=self.env_path, override=True)
         logging.info("Loading saved entries from .env file")
         self.saved_entries["TWITCH_ID"] = os.getenv("TWITCH_CLIENT_ID", "")
         self.saved_entries["TWITCH_SECRET"] = os.getenv("TWITCH_CLIENT_SECRET", "")
@@ -78,8 +103,7 @@ class SetupGui(customtkinter.CTk):
             new_path = os.path.join(base_dir, "_internal/.env")
             print(f"Loading .env file from: {new_path}")
 
-            # Path to the local .env file
-            local_env_path = Path(__file__).parent / ".env"
+
 
             # Import all variables from new_path to the local .env file
             with open(new_path, "r") as source_env:
@@ -87,7 +111,7 @@ class SetupGui(customtkinter.CTk):
                     # Skip comments and empty lines
                     if line.strip() and not line.startswith("#"):
                         key, value = line.strip().split("=", 1)
-                        set_key(local_env_path, key, value, quote_mode="never")
+                        set_key(self.env_path, key, value, quote_mode="never")
             
             self.load_local_env()
             
@@ -123,11 +147,10 @@ class SetupGui(customtkinter.CTk):
         
     def opening_tutorial(self):
         self.tutorial_button.configure(state="disabled")
-        current_page = self.title_page.cget("text")
-        self.tutorial_window = Tutorial(self, current_page)  # Store the Tutorial window reference
+        self.tutorial_window = Tutorial(self, self.current_page_key)  # Pass the page key
         self.tutorial_window.protocol("WM_DELETE_WINDOW", lambda: self.closing_tutorial())
         self.tutorial_window.mainloop()
-            
+
     def closing_tutorial(self):
         if self.tutorial_window:
             self.tutorial_window.destroy()
@@ -166,7 +189,8 @@ class SetupGui(customtkinter.CTk):
         
         if self.first_time == "false": self.save_entries()
         
-        self.title_page.configure(text=self.translator.t("api-conf-title-p1"))
+        self.current_page_key = "api-conf-title-p1"
+        self.title_page.configure(text=self.translator.t(self.current_page_key))
         
         self.TWITCH_CHANNEL = customtkinter.CTkEntry(self, placeholder_text="Twitch Channel", width=250)
         self.TWITCH_CHANNEL.grid(row=2, column=0, pady=(0,10), padx=(20, 5), sticky="ew")
@@ -189,7 +213,7 @@ class SetupGui(customtkinter.CTk):
         self.progressbar.set(0.1)
         
         if self.tutorial_window:
-            self.tutorial_window.update_guide_text(self.title_page.cget("text"))
+            self.tutorial_window.update_guide_text(self.current_page_key)
         
         
     #Config osu! API page
@@ -208,7 +232,8 @@ class SetupGui(customtkinter.CTk):
         
         self.save_entries()
         
-        self.title_page.configure(text=self.translator.t("api-conf-title-p2"))
+        self.current_page_key = "api-conf-title-p2"
+        self.title_page.configure(text=self.translator.t(self.current_page_key))
 
         self.OSU_ID = customtkinter.CTkEntry(self, placeholder_text="osu! API ID", width=300)
         self.OSU_ID.grid(row=2, column=0, padx=20, pady=(0,10), columnspan=2)
@@ -227,7 +252,7 @@ class SetupGui(customtkinter.CTk):
         self.progressbar.set(0.5)
         
         if self.tutorial_window:
-            self.tutorial_window.update_guide_text(self.title_page.cget("text"))
+            self.tutorial_window.update_guide_text(self.current_page_key)
     
     #Config IRC page
     def third_page(self):
@@ -237,10 +262,14 @@ class SetupGui(customtkinter.CTk):
         if hasattr(self, "OSU_SECRET"):
             self.OSU_SECRET.grid_forget()
         
+        if self.tutorial_window:
+            self.tutorial_window.update_guide_text(self.current_page_key)
+        
         
         self.save_entries()
         
-        self.title_page.configure(text=self.translator.t("api-conf-title-p3"))
+        self.current_page_key = "api-conf-title-p3"
+        self.title_page.configure(text=self.translator.t(self.current_page_key))
         
         self.IRC_NICK = customtkinter.CTkEntry(self, placeholder_text="IRC nick", width=300,)
         self.IRC_NICK.grid(row=2, column=0, padx=20, pady=(0,10), columnspan=2)
@@ -260,7 +289,7 @@ class SetupGui(customtkinter.CTk):
         self.progressbar.set(0.9)
         
         if self.tutorial_window:
-            self.tutorial_window.update_guide_text(self.title_page.cget("text"))
+            self.tutorial_window.update_guide_text(self.current_page_key)
 
     
     def on_closing(self):
@@ -275,22 +304,22 @@ class SetupGui(customtkinter.CTk):
         missing_keys = [key for key, value in self.saved_entries.items() if value == ""]
         
         if missing_keys:
-                messagebox.showerror(self.translator.t("api-conf-messagebox-error-type"), self.translator.t("api-conf-messagebox-error") ,fields=', '.join(missing_keys))
+                error_message = self.translator.t("api-conf-messagebox-error").format(fields=', '.join(missing_keys))
+                messagebox.showerror(self.translator.t("api-conf-messagebox-error-type"), error_message)
                 return
             
         #saving to .env file
-        env_path = Path(__file__).parent / ".env"
         
-        set_key(dotenv_path=env_path, key_to_set="TWITCH_CLIENT_ID", value_to_set=self.saved_entries["TWITCH_ID"], quote_mode= "never")
-        set_key(dotenv_path=env_path, key_to_set="TWITCH_CLIENT_SECRET", value_to_set=self.saved_entries["TWITCH_SECRET"], quote_mode= "never")
-        set_key(dotenv_path=env_path, key_to_set="TWITCH_TARGET_CHANNEL", value_to_set=self.saved_entries["TWITCH_CHANNEL"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="TWITCH_CLIENT_ID", value_to_set=self.saved_entries["TWITCH_ID"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="TWITCH_CLIENT_SECRET", value_to_set=self.saved_entries["TWITCH_SECRET"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="TWITCH_TARGET_CHANNEL", value_to_set=self.saved_entries["TWITCH_CHANNEL"], quote_mode= "never")
         
-        set_key(dotenv_path=env_path, key_to_set="OSU_CLIENT_ID", value_to_set=self.saved_entries["OSU_ID"], quote_mode= "never")
-        set_key(dotenv_path=env_path, key_to_set="OSU_CLIENT_SECRET", value_to_set=self.saved_entries["OSU_SECRET"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="OSU_CLIENT_ID", value_to_set=self.saved_entries["OSU_ID"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="OSU_CLIENT_SECRET", value_to_set=self.saved_entries["OSU_SECRET"], quote_mode= "never")
         
-        set_key(dotenv_path=env_path, key_to_set="IRC_NICK", value_to_set=self.saved_entries["IRC_NICK"], quote_mode= "never")
-        set_key(dotenv_path=env_path, key_to_set="IRC_PASSWORD", value_to_set=self.saved_entries["IRC_PASSWORD"], quote_mode= "never")
-        set_key(dotenv_path=env_path, key_to_set="FIRST_TIME_RUN", value_to_set="false", quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="IRC_NICK", value_to_set=self.saved_entries["IRC_NICK"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="IRC_PASSWORD", value_to_set=self.saved_entries["IRC_PASSWORD"], quote_mode= "never")
+        set_key(dotenv_path=self.env_path, key_to_set="FIRST_TIME_RUN", value_to_set="false", quote_mode= "never")
 
 
         logging.info(self.translator.t("api-conf-info"))
@@ -302,81 +331,106 @@ class SetupGui(customtkinter.CTk):
                 gui = MainGui()
                 gui.mainloop()
         
+        if self.on_save_callback:
+            self.on_save_callback()
         return
+    
             
+    def set_language(self, lang_code):
+        self.translator = Translator(lang_code)
+        self.translator.set_language(lang_code)
+        self.refresh_texts()
+        # Update tutorial window if open
+        if self.tutorial_window:
+            self.tutorial_window.set_translator(self.translator)
+
+    def refresh_texts(self):
+        # Update all texts that depend on the translator
+        self.title_page.configure(text=self.translator.t(self.current_page_key))
+        
+        if self.current_page_key == "api-conf-title-p3":
+            self.buttonN.configure(text=self.translator.t("finish-btn"))
+        else:
+            self.buttonN.configure(text=self.translator.t("next-btn"))
+            
+        self.buttonP.configure(text=self.translator.t("prev-btn"))
+        self.tutorial_button.configure(text=self.translator.t("api-conf-tutorial-btn"))
+        self.import_settings_button.configure(text=self.translator.t("import-settings-btn"))
             
 class Tutorial(customtkinter.CTk):
-    def __init__(self, parent, current_page):
+    def __init__(self, parent, current_page_key):
         super().__init__()
         self.parent = parent
-        self.translator = Translator(os.getenv("LANGUAGE", "en"))
-        
+        self.translator = parent.translator  # Use the parent's translator
+        self.current_page_key = current_page_key
+
         # Set the appearance mode and color theme
         customtkinter.set_appearance_mode("System") 
         customtkinter.set_default_color_theme("blue") 
-        
+        icon = Path(__file__).parent / "OTIT.ico"
+        self.iconbitmap(icon)
+
         # window title and size
         self.title("Tutorial")
         self.geometry("400x300")
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.resizable(False, False)
-        
+
         self.guide_text = Text(self, font=("Nunito", 15), wrap=WORD, state="disabled", width=390, height=290, bg="#282424", fg="white", bd=0)
         self.guide_text.grid(row=0, column=0, padx=5, pady=5)
-        
-        self.update_guide_text(current_page)
-        
-    def update_guide_text(self, current_page):
+
+        self.update_guide_text(current_page_key)
+
+    def set_translator(self, translator):
+        self.translator = translator
+        self.update_guide_text(self.current_page_key)
+
+    def update_guide_text(self, current_page_key):
+        self.current_page_key = current_page_key
         self.guide_text.configure(state="normal")
         self.guide_text.delete("1.0", END)
-        
+
         start_text = self.translator.t("api-conf-tutorial-desc1")
-        
-        if current_page == self.translator.t("api-conf-title-p1"):
+
+        if current_page_key == "api-conf-title-p1":
             self.insert_hyperlink(
                 start_text,
                 "https://dev.twitch.tv/console/apps",
                 self.translator.t("api-conf-tutorial-desc2")
             )
-            
-        elif current_page == self.translator.t("api-conf-title-p2"):
+        elif current_page_key == "api-conf-title-p2":
             self.insert_hyperlink(
                 start_text,
                 "https://osu.ppy.sh/home/account/edit",
                 self.translator.t("api-conf-tutorial-desc3")
             )
-            
-        elif current_page == self.translator.t("api-conf-title-p3"):
+        elif current_page_key == "api-conf-title-p3":
             self.insert_hyperlink(
                 start_text,
                 "https://osu.ppy.sh/home/account/edit",
                 self.translator.t("api-conf-tutorial-desc4")
             )
-            
-            
         else:
             logging.error("Unknown page")
-        
-        
+
         self.guide_text.configure(state="disabled")
-        
+
     def insert_hyperlink(self, start_text, url, end_text):
-        
         self.guide_text.insert(END, start_text)
         start_index = self.guide_text.index(INSERT)
         self.guide_text.insert(END, url)
         end_index = self.guide_text.index(INSERT)
         self.guide_text.insert(END, end_text)
-        
+
         # Add a tag for the hyperlink
         self.guide_text.tag_add("hyperlink", start_index, end_index)
         self.guide_text.tag_config("hyperlink", foreground="#7eaaff", underline=True)
-        
+
         # Bind events for the hyperlink tag
         self.guide_text.tag_bind("hyperlink", "<Button-1>", lambda e: self.open_url(url))  # Open URL on click
         self.guide_text.tag_bind("hyperlink", "<Enter>", lambda e: self.guide_text.config(cursor="hand2"))  # Change cursor to hand2
         self.guide_text.tag_bind("hyperlink", "<Leave>", lambda e: self.guide_text.config(cursor=""))  # Reset cursor
-        
+
     def open_url(self, url):
         webbrowser.open_new(url)

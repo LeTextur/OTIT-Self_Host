@@ -15,6 +15,9 @@ Sometimes Windows Defender or other antivirus software will detect a .exe file a
 That certificate cost too much for "solo coder". To prevent that I sugest to add as exception in your antivirus.
 
 ## Known issues
-- some things are not written in english
+
+- When you change the language without saving, the console will not be translated.
+- Sometimes the program doesn't quit and stays in your RAM (only uses around 70MB).
+- When you put max slider handle to the left it will recognize as 0 instead of ∞
 
 If you found any issue or would like to submint an improvement, please submit an issue using the issues tab above

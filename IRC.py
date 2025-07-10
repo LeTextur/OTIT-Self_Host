@@ -36,13 +36,13 @@ class IrcBot(SingleServerIRCBot):
                 self.connect("irc.ppy.sh", 6667, os.getenv("IRC_NICK"), os.getenv("IRC_PASSWORD"))
                 logging.info(self.translator.t("main-gui-irc-console-info4"))
             except Exception as e:
-                logging.error(self.translator.t("main-gui-irc-console-error2"), error = e)
+                logging.error(self.translator.t("main-gui-irc-console-error2", error = e))
                 return
         
         try:
             target = target.replace(" ", "_")
             self.connection.privmsg(target, text)
-            logging.info(self.translator.t("main-gui-irc-console-info3"), target=target)
+            logging.info(self.translator.t("main-gui-irc-console-info3", target=target))
         except Exception as e:
-            logging.error(self.translator.t("main-gui-irc-console-error3"),target=target, error = e)
+            logging.error(self.translator.t("main-gui-irc-console-error3", target=target, error = e))
             
